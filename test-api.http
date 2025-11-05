@@ -1,0 +1,201 @@
+@tokenA = dev-591e45b2-d07f-43af-81ff-528cc098be6e
+@tokenB = dev-e8eaf9f1-72b5-4318-bcfa-944a4f8d50a2
+
+@userA = 591e45b2-d07f-43af-81ff-528cc098be6e
+@userB = e8eaf9f1-72b5-4318-bcfa-944a4f8d50a2
+
+@threadId = 1d5d57c1-b1e0-40fc-996f-f6274bb46581
+
+# USER A
+
+### Register a new user A
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "a@mergecs.app",
+  "password": "1234"
+}
+
+### Login with user A
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "a@mergecs.app",
+  "password": "1234"
+}
+
+### Get current user info A (replace TOKEN below after login)
+GET http://localhost:8080/api/auth/me
+Authorization: Bearer {{tokenA}}
+
+### Get my profile A (empty but created)
+GET http://localhost:8080/api/profile/me
+Authorization: Bearer {{tokenA}}
+
+## USER B
+
+### Register a new user B
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "b@mergecs.app",
+  "password": "1234"
+}
+
+### Login with user B
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "b@mergecs.app",
+  "password": "1234"
+}
+
+### Get current user info B (replace TOKEN below after login)
+GET http://localhost:8080/api/auth/me
+Authorization: Bearer {{tokenB}}
+
+### Get my profile B (empty but created)
+GET http://localhost:8080/api/profile/me
+Authorization: Bearer {{tokenB}}
+
+## Complete Profile A
+
+### Update basics A (name, city, birthday, etc.)
+PUT http://localhost:8080/api/profile/me
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "name": "Alice",
+  "city": "San Jose",
+  "birthday": "2000-05-12",
+  "gender": "FEMALE",
+  "pronouns": "SHE_HER",
+  "relationshipIntent": "LONG_TERM",
+  "heightCm": 165
+}
+
+### Add one photo URL
+POST http://localhost:8080/api/profile/me/photos
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "url": "https://picsum.photos/800/1000?random=42",
+  "position": 0
+}
+
+### Add two prompt answers
+PUT http://localhost:8080/api/profile/me/prompts
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+[
+  {"question": "Tabs or spaces?", "answer": "Spaces—indentation is life."},
+  {"question": "Favorite algorithm?", "answer": "Dijkstra for clarity + speed."}
+]
+
+### Re-fetch profile to verify discoverable = true
+GET http://localhost:8080/api/profile/me
+Authorization: Bearer {{tokenA}}
+
+## Complete Profile B
+
+### Update basics B (name, city, birthday, etc.)
+PUT http://localhost:8080/api/profile/me
+Content-Type: application/json
+Authorization: Bearer {{tokenB}}
+
+{
+  "name": "Bob",
+  "city": "Los Angeles",
+  "birthday": "2000-07-03",
+  "gender": "MALE",
+  "pronouns": "HE_HIM",
+  "relationshipIntent": "LONG_TERM",
+  "heightCm": 178
+}
+
+### Add one photo URL
+POST http://localhost:8080/api/profile/me/photos
+Content-Type: application/json
+Authorization: Bearer {{tokenB}}
+
+{
+  "url": "https://picsum.photos/800/1000?random=42",
+  "position": 0
+}
+
+### Add two prompt answers
+PUT http://localhost:8080/api/profile/me/prompts
+Content-Type: application/json
+Authorization: Bearer {{tokenB}}
+
+[
+  {"question": "Favorite language?", "answer": "Java"},
+  {"question": "Dark mode?", "answer": "Always"}
+]
+
+### Re-fetch profile to verify discoverable = true
+GET http://localhost:8080/api/profile/me
+Authorization: Bearer {{tokenB}}
+
+### A: see next candidate (should be B)
+GET http://localhost:8080/api/discovery/next
+Authorization: Bearer {{tokenA}}
+
+### A: like B
+POST http://localhost:8080/api/matching/like
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "likedUserId": "{{userB}}"
+}
+
+### B: see next candidate (should be A)
+GET http://localhost:8080/api/discovery/next
+Authorization: Bearer {{tokenB}}
+
+### B: like A
+POST http://localhost:8080/api/matching/like
+Content-Type: application/json
+Authorization: Bearer {{tokenB}}
+
+{
+  "likedUserId": "{{userA}}"
+}
+
+### List my threads (A)
+GET http://localhost:8080/api/threads
+Authorization: Bearer {{tokenA}}
+
+### List my threads (B)
+GET http://localhost:8080/api/threads
+Authorization: Bearer {{tokenB}}
+
+### A sends a message
+POST http://localhost:8080/api/threads/{{threadId}}/messages
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{ "content": "hey" }
+
+### B fetches messages
+GET http://localhost:8080/api/threads/{{threadId}}/messages
+Authorization: Bearer {{tokenB}}
+
+### B replies
+POST http://localhost:8080/api/threads/{{threadId}}/messages
+Content-Type: application/json
+Authorization: Bearer {{tokenB}}
+
+{ "content": "hi! great to match" }
+
+### A fetches messages
+GET http://localhost:8080/api/threads/{{threadId}}/messages
+Authorization: Bearer {{tokenA}}
