@@ -1,7 +1,7 @@
 package com.merge.mergedatingapp.chat;
 
 import com.merge.mergedatingapp.auth.AuthService;
-import com.merge.mergedatingapp.auth.dto.MeResponse;
+import com.merge.mergedatingapp.auth.dto.userResponse;
 import com.merge.mergedatingapp.chat.dto.MessageRequest;
 import com.merge.mergedatingapp.chat.dto.MessageResponse;
 import com.merge.mergedatingapp.chat.dto.ThreadSummary;
@@ -21,8 +21,8 @@ public class ChatController {
     private final ChatService svc;
 
     private UUID uid(String header) {
-        MeResponse me = auth.meFromDevToken(header);
-        return me.userId();
+        userResponse user = auth.getUserDevToken(header);
+        return user.userId();
     }
 
     @GetMapping("/threads")

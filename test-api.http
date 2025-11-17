@@ -1,10 +1,10 @@
-@tokenA = dev-591e45b2-d07f-43af-81ff-528cc098be6e
-@tokenB = dev-e8eaf9f1-72b5-4318-bcfa-944a4f8d50a2
+@tokenA = dev-895082c1-abee-4f06-9601-8a249085c3c6
+@tokenB = dev-81de1737-74f0-49a7-b492-7469a79933cc
 
-@userA = 591e45b2-d07f-43af-81ff-528cc098be6e
-@userB = e8eaf9f1-72b5-4318-bcfa-944a4f8d50a2
+@userA = 895082c1-abee-4f06-9601-8a249085c3c6
+@userB = 81de1737-74f0-49a7-b492-7469a79933cc
 
-@threadId = 1d5d57c1-b1e0-40fc-996f-f6274bb46581
+@threadId = f01d43bd-d4cf-4ade-a4d1-bc4f0163cc3f
 
 # USER A
 
@@ -27,11 +27,11 @@ Content-Type: application/json
 }
 
 ### Get current user info A (replace TOKEN below after login)
-GET http://localhost:8080/api/auth/me
+GET http://localhost:8080/api/auth/user
 Authorization: Bearer {{tokenA}}
 
 ### Get my profile A (empty but created)
-GET http://localhost:8080/api/profile/me
+GET http://localhost:8080/api/profile/user
 Authorization: Bearer {{tokenA}}
 
 ## USER B
@@ -55,17 +55,17 @@ Content-Type: application/json
 }
 
 ### Get current user info B (replace TOKEN below after login)
-GET http://localhost:8080/api/auth/me
+GET http://localhost:8080/api/auth/user
 Authorization: Bearer {{tokenB}}
 
 ### Get my profile B (empty but created)
-GET http://localhost:8080/api/profile/me
+GET http://localhost:8080/api/profile/user
 Authorization: Bearer {{tokenB}}
 
 ## Complete Profile A
 
 ### Update basics A (name, city, birthday, etc.)
-PUT http://localhost:8080/api/profile/me
+PUT http://localhost:8080/api/profile/user
 Content-Type: application/json
 Authorization: Bearer {{tokenA}}
 
@@ -80,7 +80,7 @@ Authorization: Bearer {{tokenA}}
 }
 
 ### Add one photo URL
-POST http://localhost:8080/api/profile/me/photos
+POST http://localhost:8080/api/profile/user/photos
 Content-Type: application/json
 Authorization: Bearer {{tokenA}}
 
@@ -90,7 +90,7 @@ Authorization: Bearer {{tokenA}}
 }
 
 ### Add two prompt answers
-PUT http://localhost:8080/api/profile/me/prompts
+PUT http://localhost:8080/api/profile/user/prompts
 Content-Type: application/json
 Authorization: Bearer {{tokenA}}
 
@@ -100,13 +100,13 @@ Authorization: Bearer {{tokenA}}
 ]
 
 ### Re-fetch profile to verify discoverable = true
-GET http://localhost:8080/api/profile/me
+GET http://localhost:8080/api/profile/user
 Authorization: Bearer {{tokenA}}
 
 ## Complete Profile B
 
 ### Update basics B (name, city, birthday, etc.)
-PUT http://localhost:8080/api/profile/me
+PUT http://localhost:8080/api/profile/user
 Content-Type: application/json
 Authorization: Bearer {{tokenB}}
 
@@ -121,7 +121,7 @@ Authorization: Bearer {{tokenB}}
 }
 
 ### Add one photo URL
-POST http://localhost:8080/api/profile/me/photos
+POST http://localhost:8080/api/profile/user/photos
 Content-Type: application/json
 Authorization: Bearer {{tokenB}}
 
@@ -131,7 +131,7 @@ Authorization: Bearer {{tokenB}}
 }
 
 ### Add two prompt answers
-PUT http://localhost:8080/api/profile/me/prompts
+PUT http://localhost:8080/api/profile/user/prompts
 Content-Type: application/json
 Authorization: Bearer {{tokenB}}
 
@@ -141,7 +141,7 @@ Authorization: Bearer {{tokenB}}
 ]
 
 ### Re-fetch profile to verify discoverable = true
-GET http://localhost:8080/api/profile/me
+GET http://localhost:8080/api/profile/user
 Authorization: Bearer {{tokenB}}
 
 ### A: see next candidate (should be B)

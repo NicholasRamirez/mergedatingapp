@@ -25,8 +25,8 @@ public class AuthController {
     }
 
     // For now, reads our "dev-<uuid>" token from Authorization header
-    @GetMapping("/me")
-    public MeResponse me(@RequestHeader(name = "Authorization", required = false) String authHeader) {
-        return auth.meFromDevToken(authHeader);
+    @GetMapping("/user")
+    public userResponse user(@RequestHeader(name = "Authorization", required = false) String authHeader) {
+        return auth.getUserDevToken(authHeader);
     }
 }

@@ -1,13 +1,11 @@
 package com.merge.mergedatingapp.discovery;
 
 import com.merge.mergedatingapp.auth.AuthService;
-import com.merge.mergedatingapp.auth.dto.MeResponse;
+import com.merge.mergedatingapp.auth.dto.userResponse;
 import com.merge.mergedatingapp.discovery.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -20,8 +18,8 @@ public class DiscoveryController {
     private final DiscoveryService svc;
 
     private UUID uid(String header) {
-        MeResponse me = auth.meFromDevToken(header);
-        return me.userId();
+        userResponse user = auth.getUserDevToken(header);
+        return user.userId();
     }
 
     @GetMapping("/discovery/next")

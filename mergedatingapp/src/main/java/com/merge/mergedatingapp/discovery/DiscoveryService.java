@@ -2,7 +2,6 @@ package com.merge.mergedatingapp.discovery;
 
 import com.merge.mergedatingapp.discovery.dto.*;
 import com.merge.mergedatingapp.profiles.*;
-import com.merge.mergedatingapp.profiles.dto.ProfileResponse.PromptQA;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -10,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +42,8 @@ public class DiscoveryService {
                     .map(pa -> new CandidateCard.PromptQA(pa.getQuestion(), pa.getAnswer()))
                     .toList();
 
-            return new CandidateCard(p.getUserId(), p.getName(), p.getCity(), photoUrls, qas);
+            return new CandidateCard(p.getUserId(), p.getName(), p.getCity(), photoUrls, qas, p.getGender(),
+                        p.getPronouns(), p.getRelationshipIntent(), p.getHeightCm());
         }
         throw new ResponseStatusException(HttpStatus.NO_CONTENT, "No more candidates");
     }

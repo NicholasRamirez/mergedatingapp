@@ -43,7 +43,7 @@ public class AuthService {
     }
 
     // Parse our dev token and return user info
-    public MeResponse meFromDevToken(String authHeader) {
+    public userResponse getUserDevToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or invalid token");
         }
@@ -63,6 +63,6 @@ public class AuthService {
 
         var user = users.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-        return new MeResponse(user.getId(), user.getEmail());
+        return new userResponse(user.getId(), user.getEmail());
     }
 }

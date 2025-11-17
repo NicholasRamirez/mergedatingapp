@@ -1,7 +1,7 @@
 package com.merge.mergedatingapp.profiles;
 
 import com.merge.mergedatingapp.auth.AuthService;
-import com.merge.mergedatingapp.auth.dto.MeResponse;
+import com.merge.mergedatingapp.auth.dto.userResponse;
 import com.merge.mergedatingapp.profiles.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,44 +19,44 @@ public class ProfileController {
     private final AuthService auth; // to parse the dev token and get userId
 
     private UUID userIdFromAuth(String header) {
-        MeResponse me = auth.meFromDevToken(header);
-        return me.userId();
+        userResponse user = auth.getUserDevToken(header);
+        return user.userId();
     }
 
-    @GetMapping("/me")
-    public ProfileResponse me(@RequestHeader(name = "Authorization", required = false) String authHeader) {
+    @GetMapping("/user")
+    public ProfileResponse user(@RequestHeader(name = "Authorization", required = false) String authHeader) {
         return svc.getMyProfile(userIdFromAuth(authHeader));
     }
 
-    @PutMapping("/me")
+    @PutMapping("/user")
     public ProfileResponse update(@RequestHeader(name = "Authorization", required = false) String authHeader,
                                   @Valid @RequestBody ProfileUpdateRequest req) {
         return svc.updateBasics(userIdFromAuth(authHeader), req);
     }
 
-    @GetMapping("/me/photos")
+    @GetMapping("/user/photos")
     public List<String> myPhotos(@RequestHeader(name = "Authorization", required = false) String authHeader) {
         return svc.getMyProfile(userIdFromAuth(authHeader)).photos();
     }
 
-    @PostMapping("/me/photos")
+    @PostMapping("/user/photos")
     public void addPhoto(@RequestHeader(name = "Authorization", required = false) String authHeader,
                          @Valid @RequestBody PhotoRequest req) {
         svc.addPhoto(userIdFromAuth(authHeader), req);
     }
 
-    @DeleteMapping("/me/photos/{photoId}")
+    @DeleteMapping("/user/photos/{photoId}")
     public void deletePhoto(@RequestHeader(name = "Authorization", required = false) String authHeader,
                             @PathVariable UUID photoId) {
         svc.removePhoto(userIdFromAuth(authHeader), photoId);
     }
 
-    @GetMapping("/me/prompts")
+    @GetMapping("/user/prompts")
     public List<ProfileResponse.PromptQA> myPrompts(@RequestHeader(name = "Authorization", required = false) String authHeader) {
         return svc.getMyProfile(userIdFromAuth(authHeader)).prompts();
     }
 
-    @PutMapping("/me/prompts")
+    @PutMapping("/user/prompts")
     public void upsertPrompts(@RequestHeader(name = "Authorization", required = false) String authHeader,
                               @Valid @RequestBody List<PromptAnswerRequest> list) {
         svc.upsertPrompts(userIdFromAuth(authHeader), list);
