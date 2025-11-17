@@ -1,0 +1,64 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "auth" {
+  class AuthController {
+    +register(req: RegisterRequest): void
+    +login(req: LoginRequest): TokenResponse
+    +user(authHeader: String): UserResponse
+  }
+
+  class AuthService {
+    +register(req: RegisterRequest): void
+    +login(req: LoginRequest): TokenResponse
+    +getUserDevToken(authHeader: String): UserResponse
+  }
+
+  package "dto" {
+    class LoginRequest <<record>> {
+      +email: String
+      +password: String
+    }
+    class RegisterRequest <<record>> {
+      +email: String
+      +password: String
+    }
+    class TokenResponse <<record>> {
+      +accessToken: String
+    }
+    class UserResponse <<record>> {
+      +userId: UUID
+      +email: String
+    }
+  }
+}
+
+package "users" {
+  class User {
+    -id: UUID
+    -email: String
+    -passwordHash: String
+    -createdAt: Instant
+  }
+
+  interface UserRepository <<repository>> {
+    +findByEmail(email: String): Optional<User>
+    +existsByEmail(email: String): boolean
+  }
+}
+
+package "security" {
+  class PasswordConfig {
+    +passwordEncoder(): PasswordEncoder
+  }
+
+  class SecurityConfig {
+    +filterChain(http: HttpSecurity): SecurityFilterChain
+  }
+}
+
+AuthController --> AuthService
+AuthService --> UserRepository
+AuthService --> User
+@enduml

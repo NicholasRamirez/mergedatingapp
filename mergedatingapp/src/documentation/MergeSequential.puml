@@ -1,0 +1,85 @@
+@startuml
+title Merge Dating App – Sequential
+
+actor User
+participant "Web App (Browser)" as FE
+participant "Merge Server" as BE
+
+' LOGIN / SIGN UP
+User -> FE: Open Merge site
+FE -> BE: Request initial page
+BE --> FE: HTML/CSS/JS
+
+User -> FE: Click "Log in" / "Sign up"
+User -> FE: Enter email & password
+FE -> BE: Submit credentials
+BE --> FE: Success + session/token
+FE --> User: Show logged-in state
+
+' LOAD OR COMPLETE PROFILE
+User -> FE: Open Profile page
+FE -> BE: Load profile data
+BE --> FE: Profile details (if any)
+FE --> User: Show profile form
+
+alt Profile incomplete
+    User -> FE: Fill basic info,\nadd photos & prompts
+    FE -> BE: Save profile changes
+    BE --> FE: Updated profile + marked discoverable
+    FE --> User: Show "Profile saved"
+else Profile already complete
+    FE --> User: Show profile summary
+end
+
+' DISCOVER PEOPLE
+User -> FE: Navigate to Discover
+loop For each candidate
+    FE -> BE: Request next candidate
+    BE --> FE: Candidate card data
+    FE --> User: Show candidate card
+
+    alt User presses "Pass"
+        User -> FE: Click Pass
+        FE -> BE: Record pass
+        BE --> FE: Acknowledgement
+    else User presses "Like"
+        User -> FE: Click Like
+        FE -> BE: Record like
+        BE --> FE: Response (liked or matched)
+
+        alt "It's a match!"
+            FE --> User: Show match popup
+            opt User chooses "Open chat"
+                break
+            end
+        else Only one-sided like
+            FE --> User: Show subtle feedback\n("Like sent")
+        end
+    end
+end
+
+' CHAT WITH A MATCH
+User -> FE: Open Chat page
+FE -> BE: Load list of matches / threads
+BE --> FE: Match + conversation list
+FE --> User: Show chat sidebar
+
+User -> FE: Select a conversation
+FE -> BE: Load messages for thread
+BE --> FE: Message history
+FE --> User: Render chat messages
+
+loop While chatting
+    User -> FE: Type and send message
+    FE -> BE: Send message content
+    BE --> FE: Saved message + timestamp
+    FE --> User: Append message in chat
+end
+
+' OPTIONAL NAVIGATION
+opt User returns to Discover or Profile
+    User -> FE: Navigate sections
+    ... repeat flows as needed ...
+end
+
+@enduml

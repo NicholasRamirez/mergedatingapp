@@ -1,0 +1,109 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "discovery" {
+
+  class SeenCandidate {
+    -viewerUserId: UUID
+    -candidateUserId: UUID
+    -decision: Decision
+    -seenAt: Instant
+  }
+  enum Decision {
+    NONE;
+    PASS;
+    LIKE
+  }
+
+  class LikeEntity {
+    -likerId: UUID
+    -likedId: UUID
+    -createdAt: Instant
+  }
+
+  class Match {
+    -id: UUID
+    -userA: UUID
+    -userB: UUID
+    -active: boolean
+  }
+
+  class ChatThread {
+    -id: UUID
+    -matchId: UUID
+    -archived: boolean
+  }
+
+  interface SeenCandidateRepository <<repository>>
+  interface LikeRepository <<repository>>
+  interface MatchRepository <<repository>>
+  interface ChatThreadRepository <<repository>>
+
+  class DiscoveryService {
+    +next(viewerUserId: UUID): CandidateCard
+    +pass(viewer: UUID, candidate: UUID): void
+    +like(liker: UUID, liked: UUID): LikeResponse
+  }
+
+  class DiscoveryController {
+    +next(authHeader: String): CandidateCard
+    +pass(authHeader: String, req: PassRequest): void
+    +like(authHeader: String, req: LikeRequest): LikeResponse
+  }
+
+  package "dto" {
+    class CandidateCard <<record>>
+    class LikeRequest <<record>>
+    class PassRequest <<record>>
+    class LikeResponse <<record>>
+  }
+
+  CandidateCard "1" o-- "*" "PromptQA"
+}
+
+package "chat" {
+
+  class ChatMessage {
+    -threadId: UUID
+    -senderId: UUID
+    -content: String
+  }
+
+  interface ChatMessageRepository <<repository>> {
+    +findByThreadIdOrderBySentAtAsc(threadId: UUID): List<ChatMessage>
+  }
+
+  class ChatService {
+    +listThreads(userId: UUID): List<ThreadSummary>
+    +getMessages(userId: UUID, threadId: UUID): List<MessageResponse>
+    +send(userId: UUID, threadId: UUID, req: MessageRequest): MessageResponse
+  }
+
+  class ChatController {
+    +myThreads(authHeader: String): List<ThreadSummary>
+    +getMessages(authHeader: String, threadId: UUID): List<MessageResponse>
+    +send(authHeader: String, threadId: UUID, req: MessageRequest): MessageResponse
+  }
+
+  package "dto" {
+    class MessageRequest <<record>>
+    class MessageResponse <<record>>
+    class ThreadSummary <<record>>
+  }
+}
+
+DiscoveryController --> DiscoveryService
+DiscoveryService --> SeenCandidateRepository
+DiscoveryService --> LikeRepository
+DiscoveryService --> MatchRepository
+DiscoveryService --> ChatThreadRepository
+
+ChatController --> ChatService
+ChatService --> MatchRepository
+ChatService --> ChatThreadRepository
+ChatService --> ChatMessageRepository
+
+Match "1" o-- "1" ChatThread
+ChatThread "1" o-- "*" ChatMessage
+@enduml

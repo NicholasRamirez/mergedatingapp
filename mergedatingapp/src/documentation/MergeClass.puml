@@ -1,0 +1,404 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+'  AUTH PACKAGE
+package "auth" {
+    class AuthController {
+        +register(req: RegisterRequest): void
+        +login(req: LoginRequest): TokenResponse
+        +user(authHeader: String): UserResponse
+    }
+
+    class AuthService {
+        +register(req: RegisterRequest): void
+        +login(req: LoginRequest): TokenResponse
+        +getUserDevToken(authHeader: String): UserResponse
+    }
+
+    package "dto" {
+        class LoginRequest <<record>> {
+            +email: String
+            +password: String
+        }
+
+        class RegisterRequest <<record>> {
+            +email: String
+            +password: String
+        }
+
+        class TokenResponse <<record>> {
+            +accessToken: String
+        }
+
+        class UserResponse <<record>> {
+            +userId: UUID
+            +email: String
+        }
+    }
+}
+
+'  USERS
+package "users" {
+    class User {
+        -id: UUID
+        -email: String
+        -passwordHash: String
+        -createdAt: Instant
+    }
+
+    interface UserRepository <<repository>> {
+        +findByEmail(email: String): Optional<User>
+        +existsByEmail(email: String): boolean
+    }
+}
+
+AuthController --> AuthService
+AuthService --> UserRepository
+AuthService --> User
+
+'  PROFILES
+package "profiles" {
+
+    enum GenderType {
+        MALE
+        FEMALE
+        NONBINARY
+        OTHER
+        UNSPECIFIED
+    }
+
+    enum PronounsType {
+        HE_HIM
+        SHE_HER
+        THEY_THEM
+        OTHER
+        UNSPECIFIED
+    }
+
+    enum RelationshipIntentType {
+        LONG_TERM
+        SHORT_TERM
+        FRIENDSHIP
+        CASUAL
+        UNDECIDED
+    }
+
+    class Profile {
+        -id: UUID
+        -userId: UUID
+        -name: String
+        -birthday: LocalDate
+        -gender: GenderType
+        -pronouns: PronounsType
+        -relationshipIntent: RelationshipIntentType
+        -heightCm: Integer
+        -city: String
+        -discoverable: boolean
+        -lastUpdated: Instant
+    }
+
+    class Photo {
+        -id: UUID
+        -profileId: UUID
+        -url: String
+        -position: int
+    }
+
+    class PromptAnswer {
+        -id: UUID
+        -profileId: UUID
+        -question: String
+        -answer: String
+    }
+
+    interface ProfileRepository <<repository>> {
+        +findByUserId(userId: UUID): Optional<Profile>
+        +existsByUserId(userId: UUID): boolean
+    }
+
+    interface PhotoRepository <<repository>> {
+        +findByProfileIdOrderByPositionAsc(profileId: UUID): List<Photo>
+        +countByProfileId(profileId: UUID): long
+    }
+
+    interface PromptAnswerRepository <<repository>> {
+        +findByProfileId(profileId: UUID): List<PromptAnswer>
+        +countByProfileId(profileId: UUID): long
+        +deleteByProfileId(profileId: UUID): void
+    }
+
+    class ProfileService {
+        +getOrCreateForUser(userId: UUID): Profile
+        +getMyProfile(userId: UUID): ProfileResponse
+        +updateBasics(userId: UUID, req: ProfileUpdateRequest): ProfileResponse
+        +addPhoto(userId: UUID, req: PhotoRequest): void
+        +removePhoto(userId: UUID, photoId: UUID): void
+        +upsertPrompts(userId: UUID, list: List<PromptAnswerRequest>): void
+        -recalcDiscoverable(p: Profile): void
+    }
+
+    class ProfileController {
+        +user(authHeader: String): ProfileResponse
+        +update(authHeader: String, req: ProfileUpdateRequest): ProfileResponse
+        +myPhotos(authHeader: String): List<String>
+        +addPhoto(authHeader: String, req: PhotoRequest): void
+        +deletePhoto(authHeader: String, photoId: UUID): void
+        +myPrompts(authHeader: String): List<ProfileResponse.PromptQA>
+        +upsertPrompts(authHeader: String, list: List<PromptAnswerRequest>): void
+    }
+
+    package "dto" {
+        class ProfileUpdateRequest <<record>> {
+            +name: String
+            +city: String
+            +birthday: LocalDate
+            +gender: GenderType
+            +pronouns: PronounsType
+            +relationshipIntent: RelationshipIntentType
+            +heightCm: Integer
+        }
+
+        class PhotoRequest <<record>> {
+            +url: String
+            +position: int
+        }
+
+        class PromptAnswerRequest <<record>> {
+            +question: String
+            +answer: String
+        }
+
+        class ProfileResponse <<record>> {
+            +profileId: UUID
+            +userId: UUID
+            +name: String
+            +birthday: LocalDate
+            +gender: GenderType
+            +pronouns: PronounsType
+            +relationshipIntent: RelationshipIntentType
+            +heightCm: Integer
+            +city: String
+            +discoverable: boolean
+            +photos: List<String>
+            +prompts: List<PromptQA>
+        }
+
+        class PromptQA <<record>> {
+            +question: String
+            +answer: String
+        }
+
+        ProfileResponse "1" o-- "*" ProfilePromptQA
+    }
+
+    Profile "1" o-- "*" Photo
+    Profile "1" o-- "*" PromptAnswer
+}
+
+ProfileController --> AuthService
+ProfileController --> ProfileService
+ProfileService --> ProfileRepository
+ProfileService --> PhotoRepository
+ProfileService --> PromptAnswerRepository
+ProfileService --> Profile
+PhotoRepository --> Photo
+PromptAnswerRepository --> PromptAnswer
+
+'  DISCOVERY
+package "discovery" {
+
+    class SeenCandidate {
+        -id: UUID
+        -viewerUserId: UUID
+        -candidateUserId: UUID
+        -decision: Decision
+        -seenAt: Instant
+    }
+
+    enum Decision {
+        NONE
+        PASS
+        LIKE
+    }
+
+    class LikeEntity {
+        -id: UUID
+        -likerId: UUID
+        -likedId: UUID
+        -createdAt: Instant
+    }
+
+    class Match {
+        -id: UUID
+        -userA: UUID
+        -userB: UUID
+        -createdAt: Instant
+        -active: boolean
+    }
+
+    class ChatThread {
+        -id: UUID
+        -matchId: UUID
+        -createdAt: Instant
+        -archived: boolean
+    }
+
+    interface SeenCandidateRepository <<repository>> {
+        +findByViewerUserIdAndCandidateUserId(viewer: UUID, candidate: UUID): Optional<SeenCandidate>
+        +existsByViewerUserIdAndCandidateUserId(viewer: UUID, candidate: UUID): boolean
+    }
+
+    interface LikeRepository <<repository>> {
+        +existsByLikerIdAndLikedId(a: UUID, b: UUID): boolean
+        +findByLikerIdAndLikedId(a: UUID, b: UUID): Optional<LikeEntity>
+    }
+
+    interface MatchRepository <<repository>> {
+        +findByUserAAndUserB(a: UUID, b: UUID): Optional<Match>
+        +findByUserAOrUserB(userA: UUID, userB: UUID): List<Match>
+    }
+
+    interface ChatThreadRepository <<repository>> {
+        +findByMatchId(matchId: UUID): Optional<ChatThread>
+    }
+
+    class DiscoveryService {
+        +next(viewerUserId: UUID): CandidateCard
+        +pass(viewer: UUID, candidate: UUID): void
+        +like(liker: UUID, liked: UUID): LikeResponse
+    }
+
+    class DiscoveryController {
+        +next(authHeader: String): CandidateCard
+        +pass(authHeader: String, req: PassRequest): void
+        +like(authHeader: String, req: LikeRequest): LikeResponse
+    }
+
+    package "dto" {
+        class CandidateCard <<record>> {
+            +userId: UUID
+            +name: String
+            +city: String
+            +photos: List<String>
+            +prompts: List<CandidatePromptQA>
+            +genderType: GenderType
+            +pronounsType: PronounsType
+            +relationshipIntent: RelationshipIntentType
+            +heightCm: Integer
+        }
+
+        class CandidatePromptQA <<record>> {
+            +question: String
+            +answer: String
+        }
+
+        class LikeRequest <<record>> {
+            +likedUserId: UUID
+        }
+
+        class PassRequest <<record>> {
+            +candidateUserId: UUID
+        }
+
+        class LikeResponse <<record>> {
+            +status: String
+            +matchId: UUID
+            +threadId: UUID
+        }
+
+        CandidateCard "1" o-- "*" CandidatePromptQA
+    }
+}
+
+DiscoveryController --> AuthService
+DiscoveryController --> DiscoveryService
+DiscoveryService --> ProfileRepository
+DiscoveryService --> PhotoRepository
+DiscoveryService --> PromptAnswerRepository
+DiscoveryService --> SeenCandidateRepository
+DiscoveryService --> LikeRepository
+DiscoveryService --> MatchRepository
+DiscoveryService --> ChatThreadRepository
+
+Match "1" o-- "1" ChatThread
+
+
+'  CHAT
+package "chat" {
+
+    class ChatMessage {
+        -id: UUID
+        -threadId: UUID
+        -senderId: UUID
+        -sentAt: Instant
+        -content: String
+    }
+
+    interface ChatMessageRepository <<repository>> {
+        +findByThreadIdOrderBySentAtAsc(threadId: UUID): List<ChatMessage>
+    }
+
+    class ChatService {
+        +listThreads(userId: UUID): List<ThreadSummary>
+        +getMessages(userId: UUID, threadId: UUID): List<MessageResponse>
+        +send(userId: UUID, threadId: UUID, req: MessageRequest): MessageResponse
+        -ensureParticipant(userId: UUID, t: ChatThread): void
+    }
+
+    class ChatController {
+        +myThreads(authHeader: String): List<ThreadSummary>
+        +getMessages(authHeader: String, threadId: UUID): List<MessageResponse>
+        +send(authHeader: String, threadId: UUID, req: MessageRequest): MessageResponse
+    }
+
+    package "dto" {
+        class MessageRequest <<record>> {
+            +content: String
+        }
+
+        class MessageResponse <<record>> {
+            +id: UUID
+            +threadId: UUID
+            +senderId: UUID
+            +sentAt: Instant
+            +content: String
+        }
+
+        class ThreadSummary <<record>> {
+            +threadId: UUID
+            +matchId: UUID
+            +partnerUserId: UUID
+            +partnerName: String
+        }
+    }
+}
+
+ChatController --> AuthService
+ChatController --> ChatService
+ChatService --> MatchRepository
+ChatService --> ChatThreadRepository
+ChatService --> ChatMessageRepository
+ChatService --> ProfileRepository
+ChatMessageRepository --> ChatMessage
+ChatThreadRepository --> ChatThread
+
+
+'  SECURITY / CONFIG
+package "security" {
+    class PasswordConfig {
+        +passwordEncoder(): PasswordEncoder
+    }
+
+    class SecurityConfig {
+        +filterChain(http: HttpSecurity): SecurityFilterChain
+    }
+}
+
+package "config" {
+    class CorsConfig {
+        +corsFilter(): Object
+    }
+}
+
+@enduml
