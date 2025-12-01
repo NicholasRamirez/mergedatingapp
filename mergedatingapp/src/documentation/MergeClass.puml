@@ -8,12 +8,27 @@ package "auth" {
         +register(req: RegisterRequest): void
         +login(req: LoginRequest): TokenResponse
         +user(authHeader: String): UserResponse
+        +logout(authHeader: String): void
     }
 
     class AuthService {
         +register(req: RegisterRequest): void
         +login(req: LoginRequest): TokenResponse
-        +getUserDevToken(authHeader: String): UserResponse
+        +getUserFromToken(authHeader: String): UserResponse
+        +logout(authHeader: String): void
+    }
+
+    class AuthToken {
+        -id: UUID
+        -userId: UUID
+        -createdAt: Instant
+        -expiresAt: Instant
+        -revoked: boolean
+    }
+
+    interface AuthTokenRepository <<repository>> {
+        +findByIdAndRevokedFalse(id: UUID): Optional<AuthToken>
+        +save(token: AuthToken): AuthToken
     }
 
     package "dto" {
@@ -55,7 +70,9 @@ package "users" {
 
 AuthController --> AuthService
 AuthService --> UserRepository
+AuthService --> AuthTokenRepository
 AuthService --> User
+AuthService --> AuthToken
 
 '  PROFILES
 package "profiles" {

@@ -4,7 +4,7 @@ import com.merge.mergedatingapp.auth.AuthController;
 import com.merge.mergedatingapp.auth.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.merge.mergedatingapp.auth.dto.LoginRequest;
-import com.merge.mergedatingapp.auth.dto.userResponse;
+import com.merge.mergedatingapp.auth.dto.UserResponse;
 import com.merge.mergedatingapp.auth.dto.RegisterRequest;
 import com.merge.mergedatingapp.auth.dto.TokenResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,10 +76,10 @@ class AuthControllerTest {
     @Test
     void me_usesAuthorizationHeaderAndReturnsUserInfo() throws Exception {
         UUID userId = UUID.randomUUID();
-        userResponse me = new userResponse(userId, "me@example.com");
+        UserResponse me = new UserResponse(userId, "me@example.com");
 
         String header = "Bearer dev-" + userId;
-        when(authService.getUserDevToken(header)).thenReturn(me);
+        when(authService.getUserFromToken(header)).thenReturn(me);
 
         mockMvc.perform(get("/api/auth/user")
                         .header("Authorization", header))
@@ -87,6 +87,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.userId", is(userId.toString())))
                 .andExpect(jsonPath("$.email", is("me@example.com")));
 
-        verify(authService).getUserDevToken(eq(header));
+        verify(authService).getUserFromToken(eq(header));
     }
 }

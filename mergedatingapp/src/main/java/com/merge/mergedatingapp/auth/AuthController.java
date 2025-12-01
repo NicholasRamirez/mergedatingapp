@@ -26,7 +26,13 @@ public class AuthController {
 
     // For now, reads our "dev-<uuid>" token from Authorization header
     @GetMapping("/user")
-    public userResponse user(@RequestHeader(name = "Authorization", required = false) String authHeader) {
-        return auth.getUserDevToken(authHeader);
+    public UserResponse user(@RequestHeader(name = "Authorization", required = false) String authHeader) {
+        return auth.getUserFromToken(authHeader);
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@RequestHeader(name = "Authorization", required = false) String authHeader) {
+        auth.logout(authHeader);
     }
 }

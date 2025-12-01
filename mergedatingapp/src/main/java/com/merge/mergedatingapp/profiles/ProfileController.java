@@ -1,7 +1,7 @@
 package com.merge.mergedatingapp.profiles;
 
 import com.merge.mergedatingapp.auth.AuthService;
-import com.merge.mergedatingapp.auth.dto.userResponse;
+import com.merge.mergedatingapp.auth.dto.UserResponse;
 import com.merge.mergedatingapp.profiles.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class ProfileController {
     private final AuthService auth; // to parse the dev token and get userId
 
     private UUID userIdFromAuth(String header) {
-        userResponse user = auth.getUserDevToken(header);
+        UserResponse user = auth.getUserFromToken(header);
         return user.userId();
     }
 

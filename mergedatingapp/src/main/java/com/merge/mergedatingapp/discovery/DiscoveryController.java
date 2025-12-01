@@ -1,7 +1,7 @@
 package com.merge.mergedatingapp.discovery;
 
 import com.merge.mergedatingapp.auth.AuthService;
-import com.merge.mergedatingapp.auth.dto.userResponse;
+import com.merge.mergedatingapp.auth.dto.UserResponse;
 import com.merge.mergedatingapp.discovery.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public class DiscoveryController {
     private final DiscoveryService svc;
 
     private UUID uid(String header) {
-        userResponse user = auth.getUserDevToken(header);
+        UserResponse user = auth.getUserFromToken(header);
         return user.userId();
     }
 

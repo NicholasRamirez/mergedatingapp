@@ -3,7 +3,7 @@ package com.merge.mergedatingapp.chatTest;
 import com.merge.mergedatingapp.chat.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.merge.mergedatingapp.auth.AuthService;
-import com.merge.mergedatingapp.auth.dto.userResponse;
+import com.merge.mergedatingapp.auth.dto.UserResponse;
 import com.merge.mergedatingapp.chat.dto.MessageRequest;
 import com.merge.mergedatingapp.chat.dto.MessageResponse;
 import com.merge.mergedatingapp.chat.dto.ThreadSummary;
@@ -46,10 +46,10 @@ class ChatControllerTest {
         @Bean
         @Primary
         AuthService fakeAuthService() {
-            return new AuthService(null, null) {
+            return new AuthService(null, null, null) {
                 @Override
-                public userResponse getUserDevToken(String header) {
-                    return new userResponse(
+                public UserResponse getUserFromToken(String header) {
+                    return new UserResponse(
                             UUID.fromString("123e4567-e89b-12d3-a456-426614174000"),
                             "chat@gmail.com"
                     );

@@ -1,8 +1,10 @@
 package com.merge.mergedatingapp.authTest;
 
 import com.merge.mergedatingapp.auth.AuthService;
+import com.merge.mergedatingapp.auth.AuthToken;
+import com.merge.mergedatingapp.auth.AuthTokenRepository;
 import com.merge.mergedatingapp.auth.dto.LoginRequest;
-import com.merge.mergedatingapp.auth.dto.userResponse;
+import com.merge.mergedatingapp.auth.dto.UserResponse;
 import com.merge.mergedatingapp.auth.dto.RegisterRequest;
 import com.merge.mergedatingapp.auth.dto.TokenResponse;
 import com.merge.mergedatingapp.users.User;
@@ -18,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,6 +35,9 @@ class AuthServiceTest {
 
     @Mock
     PasswordEncoder passwordEncoder;
+
+    @Mock
+    AuthTokenRepository tokens;
 
     @InjectMocks
     AuthService authService;
@@ -72,7 +78,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_returnsDevToken_whenCredentialsValid() {
+    void login_returnsTokenUuid_whenCredentialsValid() {
         UUID userId = UUID.randomUUID();
         User user = User.builder()
                 .id(userId)
@@ -86,9 +92,22 @@ class AuthServiceTest {
         when(users.findByEmail("test@gmail.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("secret", "HASH")).thenReturn(true);
 
+        UUID tokenId = UUID.randomUUID();
+        Instant now = Instant.now();
+        AuthToken savedToken = AuthToken.builder()
+                .id(tokenId)
+                .userId(userId)
+                .createdAt(now)
+                .expiresAt(now.plus(7, ChronoUnit.DAYS))
+                .revoked(false)
+                .build();
+
+        when(tokens.save(any(AuthToken.class))).thenReturn(savedToken);
+
         TokenResponse resp = authService.login(req);
 
-        assertThat(resp.accessToken()).isEqualTo("dev-" + userId);
+        assertThat(resp.accessToken()).isEqualTo(tokenId.toString());
+        verify(tokens).save(any(AuthToken.class));
     }
 
     @Test
@@ -131,8 +150,10 @@ class AuthServiceTest {
     }
 
     @Test
-    void meFromDevToken_returnsMeResponse_whenHeaderValid() {
+    void getUserFromToken_returnsUserResponse_whenHeaderValid() {
         UUID userId = UUID.randomUUID();
+        UUID tokenId = UUID.randomUUID();
+
         User user = User.builder()
                 .id(userId)
                 .email("test@gmail.com")
@@ -140,19 +161,29 @@ class AuthServiceTest {
                 .createdAt(Instant.now())
                 .build();
 
-        String header = "Bearer dev-" + userId;
+        Instant now = Instant.now();
+        AuthToken token = AuthToken.builder()
+                .id(tokenId)
+                .userId(userId)
+                .createdAt(now.minus(1, ChronoUnit.HOURS))
+                .expiresAt(now.plus(7, ChronoUnit.DAYS))
+                .revoked(false)
+                .build();
 
+        String header = "Bearer " + tokenId;
+
+        when(tokens.findByIdAndRevokedFalse(tokenId)).thenReturn(Optional.of(token));
         when(users.findById(userId)).thenReturn(Optional.of(user));
 
-        userResponse me = authService.getUserDevToken(header);
+        UserResponse me = authService.getUserFromToken(header);
 
         assertThat(me.userId()).isEqualTo(userId);
         assertThat(me.email()).isEqualTo("test@gmail.com");
     }
 
     @Test
-    void meFromDevToken_throwsUnauthorized_whenHeaderMissing() {
-        assertThatThrownBy(() -> authService.getUserDevToken(null))
+    void getUserFromToken_throwsUnauthorized_whenHeaderMissing() {
+        assertThatThrownBy(() -> authService.getUserFromToken(null))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
@@ -162,10 +193,10 @@ class AuthServiceTest {
     }
 
     @Test
-    void meFromDevToken_throwsUnauthorized_whenNoBearerPrefix() {
-        String header = "dev-1234";
+    void getUserFromToken_throwsUnauthorized_whenNoBearerPrefix() {
+        String header = "1234-NotBearer";
 
-        assertThatThrownBy(() -> authService.getUserDevToken(header))
+        assertThatThrownBy(() -> authService.getUserFromToken(header))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
@@ -175,10 +206,10 @@ class AuthServiceTest {
     }
 
     @Test
-    void meFromDevToken_throwsUnauthorized_whenNoDevPrefix() {
-        String header = "Bearer uhhh-uhh";
+    void getUserFromToken_throwsUnauthorized_whenInvalidUuidFormat() {
+        String header = "Bearer not-a-uuid";
 
-        assertThatThrownBy(() -> authService.getUserDevToken(header))
+        assertThatThrownBy(() -> authService.getUserFromToken(header))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
@@ -188,26 +219,68 @@ class AuthServiceTest {
     }
 
     @Test
-    void meFromDevToken_throwsUnauthorized_whenInvalidUuid() {
-        String header = "Bearer dev-uhhh-uhhh";
+    void getUserFromToken_throwsUnauthorized_whenTokenNotFound() {
+        UUID tokenId = UUID.randomUUID();
+        String header = "Bearer " + tokenId;
 
-        assertThatThrownBy(() -> authService.getUserDevToken(header))
+        when(tokens.findByIdAndRevokedFalse(tokenId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.getUserFromToken(header))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-                    assertThat(rse.getReason()).contains("Invalid token UUID");
+                    assertThat(rse.getReason()).contains("Token not found");
                 });
     }
 
     @Test
-    void meFromDevToken_throwsUnauthorized_whenUserNotFound() {
+    void getUserFromToken_throwsUnauthorized_whenTokenExpired() {
         UUID userId = UUID.randomUUID();
-        String header = "Bearer dev-" + userId;
+        UUID tokenId = UUID.randomUUID();
 
+        Instant now = Instant.now();
+        AuthToken token = AuthToken.builder()
+                .id(tokenId)
+                .userId(userId)
+                .createdAt(now.minus(10, ChronoUnit.DAYS))
+                .expiresAt(now.minus(1, ChronoUnit.MINUTES))  // already expired
+                .revoked(false)
+                .build();
+
+        String header = "Bearer " + tokenId;
+
+        when(tokens.findByIdAndRevokedFalse(tokenId)).thenReturn(Optional.of(token));
+
+        assertThatThrownBy(() -> authService.getUserFromToken(header))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> {
+                    ResponseStatusException rse = (ResponseStatusException) ex;
+                    assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+                    assertThat(rse.getReason()).contains("Token expired");
+                });
+    }
+
+    @Test
+    void getUserFromToken_throwsUnauthorized_whenUserNotFound() {
+        UUID userId   = UUID.randomUUID();
+        UUID tokenId  = UUID.randomUUID();
+        Instant now   = Instant.now();
+
+        AuthToken token = AuthToken.builder()
+                .id(tokenId)
+                .userId(userId)
+                .createdAt(now)
+                .expiresAt(now.plus(7, ChronoUnit.DAYS))
+                .revoked(false)
+                .build();
+
+        String header = "Bearer " + tokenId;
+
+        when(tokens.findByIdAndRevokedFalse(tokenId)).thenReturn(Optional.of(token));
         when(users.findById(userId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.getUserDevToken(header))
+        assertThatThrownBy(() -> authService.getUserFromToken(header))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;

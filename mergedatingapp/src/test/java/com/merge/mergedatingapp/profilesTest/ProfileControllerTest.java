@@ -2,7 +2,7 @@ package com.merge.mergedatingapp.profilesTest;
 
 import com.merge.mergedatingapp.profiles.*;
 import com.merge.mergedatingapp.auth.AuthService;
-import com.merge.mergedatingapp.auth.dto.userResponse;
+import com.merge.mergedatingapp.auth.dto.UserResponse;
 import com.merge.mergedatingapp.profiles.dto.PhotoRequest;
 import com.merge.mergedatingapp.profiles.dto.ProfileResponse;
 import com.merge.mergedatingapp.profiles.dto.ProfileUpdateRequest;
@@ -58,14 +58,14 @@ class ProfileControllerTest {
     void user_returnsProfileForCurrentUser() {
 
         var profile = sampleProfile();
-        when(authService.getUserDevToken(AUTH_HEADER))
-                .thenReturn(new userResponse(USER_ID, "test@gmail.com"));
+        when(authService.getUserFromToken(AUTH_HEADER))
+                .thenReturn(new UserResponse(USER_ID, "test@gmail.com"));
         when(profileService.getMyProfile(USER_ID)).thenReturn(profile);
 
         ProfileResponse result = controller.user(AUTH_HEADER);
 
         assertThat(result).isEqualTo(profile);
-        verify(authService).getUserDevToken(AUTH_HEADER);
+        verify(authService).getUserFromToken(AUTH_HEADER);
         verify(profileService).getMyProfile(USER_ID);
     }
 
@@ -96,14 +96,14 @@ class ProfileControllerTest {
                 List.of()
         );
 
-        when(authService.getUserDevToken(AUTH_HEADER))
-                .thenReturn(new userResponse(USER_ID, "test@gmail.com"));
+        when(authService.getUserFromToken(AUTH_HEADER))
+                .thenReturn(new UserResponse(USER_ID, "test@gmail.com"));
         when(profileService.updateBasics(USER_ID, req)).thenReturn(updated);
 
         ProfileResponse result = controller.update(AUTH_HEADER, req);
 
         assertThat(result).isEqualTo(updated);
-        verify(authService).getUserDevToken(AUTH_HEADER);
+        verify(authService).getUserFromToken(AUTH_HEADER);
         verify(profileService).updateBasics(USER_ID, req);
     }
 
@@ -111,8 +111,8 @@ class ProfileControllerTest {
     void photos_returnsPhotoUrls() {
         var profile = sampleProfile();
 
-        when(authService.getUserDevToken(AUTH_HEADER))
-                .thenReturn(new userResponse(USER_ID, "test@gmail.com"));
+        when(authService.getUserFromToken(AUTH_HEADER))
+                .thenReturn(new UserResponse(USER_ID, "test@gmail.com"));
         when(profileService.getMyProfile(USER_ID)).thenReturn(profile);
 
         var photos = controller.myPhotos(AUTH_HEADER);
@@ -125,8 +125,8 @@ class ProfileControllerTest {
     void addPhoto_delegatesToService() {
         var req = new PhotoRequest("https://picsum.photos/800/1000?random=10", 0);
 
-        when(authService.getUserDevToken(AUTH_HEADER))
-                .thenReturn(new userResponse(USER_ID, "test@gmail.com"));
+        when(authService.getUserFromToken(AUTH_HEADER))
+                .thenReturn(new UserResponse(USER_ID, "test@gmail.com"));
 
         controller.addPhoto(AUTH_HEADER, req);
 
@@ -137,8 +137,8 @@ class ProfileControllerTest {
     void deletePhoto_delegatesToService() {
         UUID photoId = UUID.randomUUID();
 
-        when(authService.getUserDevToken(AUTH_HEADER))
-                .thenReturn(new userResponse(USER_ID, "test@gmail.com"));
+        when(authService.getUserFromToken(AUTH_HEADER))
+                .thenReturn(new UserResponse(USER_ID, "test@gmail.com"));
 
         controller.deletePhoto(AUTH_HEADER, photoId);
 
@@ -149,8 +149,8 @@ class ProfileControllerTest {
     void prompts_returnsPromptQAs() {
         var profile = sampleProfile();
 
-        when(authService.getUserDevToken(AUTH_HEADER))
-                .thenReturn(new userResponse(USER_ID, "test@gmail.com"));
+        when(authService.getUserFromToken(AUTH_HEADER))
+                .thenReturn(new UserResponse(USER_ID, "test@gmail.com"));
         when(profileService.getMyProfile(USER_ID)).thenReturn(profile);
 
         // when
@@ -168,8 +168,8 @@ class ProfileControllerTest {
                 new PromptAnswerRequest("Q2", "A2")
         );
 
-        when(authService.getUserDevToken(AUTH_HEADER))
-                .thenReturn(new userResponse(USER_ID, "test@gmail.com"));
+        when(authService.getUserFromToken(AUTH_HEADER))
+                .thenReturn(new UserResponse(USER_ID, "test@gmail.com"));
 
         // when
         controller.upsertPrompts(AUTH_HEADER, list);
