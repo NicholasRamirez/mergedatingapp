@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginPage(){
-    const [email,setEmail]=useState("");
+    const [username,setUsername]=useState("");
     const [password,setPassword]=useState("");
     const [mode,setMode]=useState("login"); // "login" | "register"
     const [err,setErr]=useState("");
@@ -14,8 +14,8 @@ export default function LoginPage(){
     async function submit(e){
         e.preventDefault(); setErr("");
         try{
-            if(mode==="register") await api.post("/api/auth/register",{email,password});
-            const { data } = await api.post("/api/auth/login",{email,password});
+            if(mode==="register") await api.post("/api/auth/register",{username, password});
+            const { data } = await api.post("/api/auth/login",{username, password});
             loginOk(data.accessToken); // token = "dev-<uuid>"
             nav("/profile");
         }catch(ex){
@@ -28,7 +28,7 @@ export default function LoginPage(){
             <form onSubmit={submit} className="w-full max-w-sm bg-white p-6 rounded-2xl shadow grid gap-3">
                 <h1 className="text-2xl font-bold">Merge — {mode==="login"?"Sign in":"Create account"}</h1>
                 {err && <div className="text-red-600 text-sm">{err}</div>}
-                <input className="border p-2 rounded" placeholder="email" value={email} onChange={e=>setEmail(e.target.value)} />
+                <input className="border p-2 rounded" placeholder="username" value={username} onChange={e=>setUsername(e.target.value)} />
                 <input className="border p-2 rounded" placeholder="password" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
                 <button className="bg-black text-white rounded py-2">{mode==="login"?"Sign in":"Register"}</button>
                 <button type="button" className="text-sm underline" onClick={()=>setMode(mode==="login"?"register":"login")}>

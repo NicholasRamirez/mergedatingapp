@@ -1,10 +1,10 @@
-@tokenA = c65bc179-0f13-40bd-8498-9715bc2d132c
-@tokenB = f78683ec-53e3-443f-a24f-4979f8bd82b3
+@tokenA = 0d5b0b50-154d-4901-806e-05cb981bf600
+@tokenB = 74c1b374-bf76-4b35-8904-041cf9bab5c8
 
-@userA = 895082c1-abee-4f06-9601-8a249085c3c6
-@userB = 81de1737-74f0-49a7-b492-7469a79933cc
+@userA = 903211ce-2854-4c45-9d3b-ab118e17b97d
+@userB = e04ce8f8-89a9-42bb-b8de-b42c155afa02
 
-@threadId = f01d43bd-d4cf-4ade-a4d1-bc4f0163cc3f
+@threadId = bf86bca8-c7ec-460b-b4cf-1fa6a3897fcc
 
 # USER A
 
@@ -13,7 +13,7 @@ POST http://localhost:8080/api/auth/register
 Content-Type: application/json
 
 {
-  "email": "a@mergecs.app",
+  "username": "aMerge",
   "password": "1234"
 }
 
@@ -22,7 +22,7 @@ POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "a@mergecs.app",
+  "username": "aMerge",
   "password": "1234"
 }
 
@@ -41,7 +41,7 @@ POST http://localhost:8080/api/auth/register
 Content-Type: application/json
 
 {
-  "email": "b@mergecs.app",
+  "username": "bMerge",
   "password": "1234"
 }
 
@@ -50,7 +50,7 @@ POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "b@mergecs.app",
+  "username": "bMerge",
   "password": "1234"
 }
 

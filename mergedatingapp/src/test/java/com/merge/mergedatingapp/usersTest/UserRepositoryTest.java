@@ -16,42 +16,42 @@ class UserRepositoryTest {
     private UserRepository userRepository;
 
     @Test
-    void saveAndFindByEmail_returnsUserWhenPresent() {
+    void saveAndFindByUsername_returnsUserWhenPresent() {
         User u = User.builder()
-                .email("test@gmail.com")
+                .username("TestUser")
                 .passwordHash("test123")
                 .build();
 
         userRepository.save(u);
 
-        Optional<User> found = userRepository.findByEmail("test@gmail.com");
+        Optional<User> found = userRepository.findByUsername("TestUser");
 
-        assertTrue(found.isPresent(), "User should be found by email");
-        assertEquals("test@gmail.com", found.get().getEmail());
+        assertTrue(found.isPresent(), "User should be found by username");
+        assertEquals("TestUser", found.get().getUsername());
         assertEquals("test123", found.get().getPasswordHash());
         assertNotNull(found.get().getId(), "Saved user should have generated id");
     }
 
     @Test
-    void findByEmail_returnsEmptyWhenNotPresent() {
-        Optional<User> found = userRepository.findByEmail("missing@gmail.com");
-        assertTrue(found.isEmpty(), "No user should be found for a non-existing email");
+    void findByUsername_returnsEmptyWhenNotPresent() {
+        Optional<User> found = userRepository.findByUsername("missingUser");
+        assertTrue(found.isEmpty(), "No user should be found for a non-existing username");
     }
 
     @Test
-    void existsByEmail_returnsTrueWhenUserExists() {
+    void existsByUsername_returnsTrueWhenUserExists() {
         User u = User.builder()
-                .email("exists@gmail.com")
+                .username("existsUser")
                 .passwordHash("test123")
                 .build();
 
         userRepository.save(u);
 
-        assertTrue(userRepository.existsByEmail("exists@gmail.com"));
+        assertTrue(userRepository.existsByUsername("existsUser"));
     }
 
     @Test
-    void existsByEmail_returnsFalseWhenUserDoesNotExist() {
-        assertFalse(userRepository.existsByEmail("nope@gmail.com"));
+    void existsByUsername_returnsFalseWhenUserDoesNotExist() {
+        assertFalse(userRepository.existsByUsername("nopeUser"));
     }
 }

@@ -23,11 +23,11 @@ public class AuthService {
     private final AuthTokenRepository tokens;
 
     public void register(RegisterRequest req) {
-        if (users.existsByEmail(req.email())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+        if (users.existsByUsername(req.username())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already registered");
         }
         var user = User.builder()
-                .email(req.email().toLowerCase())
+                .username(req.username())
                 .passwordHash(passwordEncoder.encode(req.password()))
                 .createdAt(Instant.now())
                 .build();
@@ -36,7 +36,7 @@ public class AuthService {
 
     // REAL token: row in DB, UUID returned to client
     public TokenResponse login(LoginRequest req) {
-        var user = users.findByEmail(req.email().toLowerCase())
+        var user = users.findByUsername(req.username())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
         if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
@@ -81,7 +81,7 @@ public class AuthService {
         var user = users.findById(token.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
-        return new UserResponse(user.getId(), user.getEmail());
+        return new UserResponse(user.getId(), user.getUsername());
     }
 
     @Transactional

@@ -43,10 +43,10 @@ class AuthServiceTest {
     AuthService authService;
 
     @Test
-    void register_savesNewUser_whenEmailNotTaken() {
-        RegisterRequest req = new RegisterRequest("Test@gmail.com", "secret");
+    void register_savesNewUser_whenUsernameNotTaken() {
+        RegisterRequest req = new RegisterRequest("TestUser", "secret");
 
-        when(users.existsByEmail("Test@gmail.com")).thenReturn(false);
+        when(users.existsByUsername("TestUser")).thenReturn(false);
         when(passwordEncoder.encode("secret")).thenReturn("ENCODED");
 
         authService.register(req);
@@ -55,23 +55,23 @@ class AuthServiceTest {
         verify(users).save(userCaptor.capture());
 
         User saved = userCaptor.getValue();
-        assertThat(saved.getEmail()).isEqualTo("test@gmail.com");  // lowercased
+        assertThat(saved.getUsername()).isEqualTo("TestUser");
         assertThat(saved.getPasswordHash()).isEqualTo("ENCODED");
         assertThat(saved.getCreatedAt()).isNotNull();
     }
 
     @Test
-    void register_throwsConflict_whenEmailAlreadyExists() {
-        RegisterRequest req = new RegisterRequest("test@gmail.com", "secret");
+    void register_throwsConflict_whenUsernameAlreadyExists() {
+        RegisterRequest req = new RegisterRequest("TestUser", "secret");
 
-        when(users.existsByEmail("test@gmail.com")).thenReturn(true);
+        when(users.existsByUsername("TestUser")).thenReturn(true);
 
         assertThatThrownBy(() -> authService.register(req))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-                    assertThat(rse.getReason()).contains("Email already registered");
+                    assertThat(rse.getReason()).contains("Username already registered");
                 });
 
         verify(users, never()).save(any());
@@ -82,14 +82,14 @@ class AuthServiceTest {
         UUID userId = UUID.randomUUID();
         User user = User.builder()
                 .id(userId)
-                .email("test@gmail.com")
+                .username("TestUser")
                 .passwordHash("HASH")
                 .createdAt(Instant.now())
                 .build();
 
-        LoginRequest req = new LoginRequest("test@gmail.com", "secret");
+        LoginRequest req = new LoginRequest("TestUser", "secret");
 
-        when(users.findByEmail("test@gmail.com")).thenReturn(Optional.of(user));
+        when(users.findByUsername("TestUser")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("secret", "HASH")).thenReturn(true);
 
         UUID tokenId = UUID.randomUUID();
@@ -111,10 +111,10 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_throwsUnauthorized_whenEmailNotFound() {
-        LoginRequest req = new LoginRequest("nope@gmail.com", "secret");
+    void login_throwsUnauthorized_whenUsernameNotFound() {
+        LoginRequest req = new LoginRequest("TestUser", "secret");
 
-        when(users.findByEmail("nope@gmail.com")).thenReturn(Optional.empty());
+        when(users.findByUsername("TestUser")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.login(req))
                 .isInstanceOf(ResponseStatusException.class)
@@ -130,14 +130,14 @@ class AuthServiceTest {
         UUID userId = UUID.randomUUID();
         User user = User.builder()
                 .id(userId)
-                .email("test@gmail.com")
+                .username("TestUser")
                 .passwordHash("HASH")
                 .createdAt(Instant.now())
                 .build();
 
-        LoginRequest req = new LoginRequest("test@gmail.com", "wrong");
+        LoginRequest req = new LoginRequest("TestUser", "wrong");
 
-        when(users.findByEmail("test@gmail.com")).thenReturn(Optional.of(user));
+        when(users.findByUsername("TestUser")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong", "HASH")).thenReturn(false);
 
         assertThatThrownBy(() -> authService.login(req))
@@ -156,7 +156,7 @@ class AuthServiceTest {
 
         User user = User.builder()
                 .id(userId)
-                .email("test@gmail.com")
+                .username("TestUser")
                 .passwordHash("HASH")
                 .createdAt(Instant.now())
                 .build();
@@ -178,7 +178,7 @@ class AuthServiceTest {
         UserResponse me = authService.getUserFromToken(header);
 
         assertThat(me.userId()).isEqualTo(userId);
-        assertThat(me.email()).isEqualTo("test@gmail.com");
+        assertThat(me.username()).isEqualTo("TestUser");
     }
 
     @Test

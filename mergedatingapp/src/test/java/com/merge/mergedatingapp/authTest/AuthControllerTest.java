@@ -76,7 +76,7 @@ class AuthControllerTest {
     @Test
     void me_usesAuthorizationHeaderAndReturnsUserInfo() throws Exception {
         UUID userId = UUID.randomUUID();
-        UserResponse me = new UserResponse(userId, "me@example.com");
+        UserResponse me = new UserResponse(userId, "username");
 
         String header = "Bearer dev-" + userId;
         when(authService.getUserFromToken(header)).thenReturn(me);
@@ -85,7 +85,7 @@ class AuthControllerTest {
                         .header("Authorization", header))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId", is(userId.toString())))
-                .andExpect(jsonPath("$.email", is("me@example.com")));
+                .andExpect(jsonPath("$.username", is("username")));
 
         verify(authService).getUserFromToken(eq(header));
     }
