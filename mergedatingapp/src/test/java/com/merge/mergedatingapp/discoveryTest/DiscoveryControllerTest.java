@@ -48,7 +48,7 @@ class DiscoveryControllerTest {
                 public UserResponse getUserFromToken(String header) {
                     return new UserResponse(
                             UUID.fromString("123e4567-e89b-12d3-a456-426614174000"),
-                            "test@example.com"
+                            "test"
                     );
                 }
             };
@@ -57,7 +57,9 @@ class DiscoveryControllerTest {
         @Bean
         @Primary
         DiscoveryService fakeDiscoveryService() {
-            return new DiscoveryService(null,null,null,null,null,null,null) {
+            return new DiscoveryService(null,null,null,null,null,null,null,
+                    (candidates, viewerId) -> candidates)
+            {
 
                 @Override
                 public CandidateCard next(UUID uid) {

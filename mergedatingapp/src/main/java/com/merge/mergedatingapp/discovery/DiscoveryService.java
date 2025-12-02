@@ -22,15 +22,21 @@ public class DiscoveryService {
     private final MatchRepository matchRepo;
     private final ChatThreadRepository chatRepo;
 
+    private final CandidateOrderingStrategy candidateOrderingStrategy;
+
     @Transactional(readOnly = true)
     public CandidateCard next(UUID viewerUserId) {
-        // Find all discoverable profiles not belonging to the viewer
-        var all = profiles.findAll().stream()
-                .filter(p -> p.isDiscoverable() && !p.getUserId().equals(viewerUserId))
-                .sorted(Comparator.comparing(p -> Optional.ofNullable(p.getLastUpdated()).orElseThrow()))
+        // Load all discoverable profiles that are NOT the viewer
+        var discoverable = profiles.findAll().stream()
+                .filter(p -> p.isDiscoverable())
+                .filter(p -> !p.getUserId().equals(viewerUserId))
                 .toList();
 
-        for (var p : all) {
+        // Delegate ordering to Strategy
+        var ordered = candidateOrderingStrategy.orderCandidates(discoverable, viewerUserId);
+
+        // Iterate in that order, skipping ones already seen
+        for (var p : ordered) {
             boolean alreadySeen = seenRepo.existsByViewerUserIdAndCandidateUserId(viewerUserId, p.getUserId());
             if (alreadySeen) continue;
 
@@ -42,9 +48,19 @@ public class DiscoveryService {
                     .map(pa -> new CandidateCard.PromptQA(pa.getQuestion(), pa.getAnswer()))
                     .toList();
 
-            return new CandidateCard(p.getUserId(), p.getName(), p.getCity(), photoUrls, qas, p.getGender(),
-                        p.getPronouns(), p.getRelationshipIntent(), p.getHeightCm());
+            return new CandidateCard(
+                    p.getUserId(),
+                    p.getName(),
+                    p.getCity(),
+                    photoUrls,
+                    qas,
+                    p.getGender(),
+                    p.getPronouns(),
+                    p.getRelationshipIntent(),
+                    p.getHeightCm()
+            );
         }
+
         throw new ResponseStatusException(HttpStatus.NO_CONTENT, "No more candidates");
     }
 

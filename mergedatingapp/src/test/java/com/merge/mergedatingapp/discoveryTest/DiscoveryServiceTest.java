@@ -35,6 +35,7 @@ class DiscoveryServiceTest {
     @Mock private LikeRepository likeRepo;
     @Mock private MatchRepository matchRepo;
     @Mock private ChatThreadRepository chatRepo;
+    @Mock private CandidateOrderingStrategy orderingStrategy;
 
     @InjectMocks
     private DiscoveryService service;
@@ -89,6 +90,9 @@ class DiscoveryServiceTest {
                         PromptAnswer.builder().question("Favorite algorithm?").answer("Dijkstra").build()
                 ));
 
+        when(orderingStrategy.orderCandidates(anyList(), any()))
+                .thenAnswer(inv -> inv.getArgument(0)); // first arg = List<Profile>
+
         CandidateCard card = service.next(viewerId);
 
         assertThat(card.userId()).isEqualTo(candidateUserId);
@@ -102,6 +106,7 @@ class DiscoveryServiceTest {
         assertThat(card.heightCm()).isEqualTo(165);
 
         verify(seenRepo).existsByViewerUserIdAndCandidateUserId(viewerId, candidateUserId);
+        verify(orderingStrategy).orderCandidates(anyList(), eq(viewerId));
     }
 
     @Test
@@ -112,6 +117,9 @@ class DiscoveryServiceTest {
         // already seen => should be skipped and we end up with no candidates
         when(seenRepo.existsByViewerUserIdAndCandidateUserId(viewerId, candidateUserId))
                 .thenReturn(true);
+
+        when(orderingStrategy.orderCandidates(anyList(), any()))
+                .thenAnswer(inv -> inv.getArgument(0)); // first arg = List<Profile>
 
         ResponseStatusException ex =
                 assertThrows(ResponseStatusException.class, () -> service.next(viewerId));
