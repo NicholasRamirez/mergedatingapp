@@ -2,12 +2,15 @@ package com.merge.mergedatingapp.discovery;
 
 import com.merge.mergedatingapp.discovery.dto.*;
 import com.merge.mergedatingapp.profiles.*;
+import com.merge.mergedatingapp.discovery.events.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -23,6 +26,7 @@ public class DiscoveryService {
     private final ChatThreadRepository chatRepo;
 
     private final CandidateOrderingStrategy candidateOrderingStrategy;
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public CandidateCard next(UUID viewerUserId) {
@@ -101,6 +105,8 @@ public class DiscoveryService {
 
         var thread = chatRepo.findByMatchId(match.getId())
                 .orElseGet(() -> chatRepo.save(ChatThread.builder().matchId(match.getId()).build()));
+
+        events.publishEvent(new MatchCreatedEvent(match.getId(), a, b, thread.getId(), Instant.now()));
 
         return LikeResponse.matched(match.getId(), thread.getId());
     }

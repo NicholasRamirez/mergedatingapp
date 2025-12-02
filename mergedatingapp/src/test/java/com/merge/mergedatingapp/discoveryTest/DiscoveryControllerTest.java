@@ -58,7 +58,7 @@ class DiscoveryControllerTest {
         @Primary
         DiscoveryService fakeDiscoveryService() {
             return new DiscoveryService(null,null,null,null,null,null,null,
-                    (candidates, viewerId) -> candidates)
+                    (candidates, viewerId) -> candidates, event -> { })
             {
 
                 @Override

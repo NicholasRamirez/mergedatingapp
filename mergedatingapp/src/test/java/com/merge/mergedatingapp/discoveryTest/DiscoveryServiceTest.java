@@ -3,6 +3,7 @@ package com.merge.mergedatingapp.discoveryTest;
 import com.merge.mergedatingapp.discovery.*;
 import com.merge.mergedatingapp.discovery.dto.CandidateCard;
 import com.merge.mergedatingapp.discovery.dto.LikeResponse;
+import com.merge.mergedatingapp.discovery.events.MatchCreatedEvent;
 import com.merge.mergedatingapp.profiles.*;
 import com.merge.mergedatingapp.profiles.Enums.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,6 +38,7 @@ class DiscoveryServiceTest {
     @Mock private MatchRepository matchRepo;
     @Mock private ChatThreadRepository chatRepo;
     @Mock private CandidateOrderingStrategy orderingStrategy;
+    @Mock private ApplicationEventPublisher events;
 
     @InjectMocks
     private DiscoveryService service;
@@ -223,5 +226,6 @@ class DiscoveryServiceTest {
 
         verify(matchRepo).save(any(Match.class));
         verify(chatRepo).save(any(ChatThread.class));
+        verify(events).publishEvent(any(MatchCreatedEvent.class));
     }
 }
