@@ -1,18 +1,24 @@
 package com.merge.mergedatingapp.discovery.events;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.merge.mergedatingapp.notifications.NotificationFactory;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class MatchNotificationListener {
 
-    private static final Logger log = LoggerFactory.getLogger(MatchNotificationListener.class);
+    private final NotificationFactory notificationFactory;
 
     @EventListener
     public void onMatchCreated(MatchCreatedEvent event) {
-        log.info("New match! matchId={}, threadId={}, userA={}, userB={}, at={}",
-                event.matchId(), event.threadId(), event.userAId(), event.userBId(), event.occurredAt());
+        // Delegate to factory (Factory Method decides which sender to use)
+        notificationFactory.notifyMatch(
+                event.userAId(),
+                event.userBId(),
+                event.matchId(),
+                event.threadId()
+        );
     }
 }

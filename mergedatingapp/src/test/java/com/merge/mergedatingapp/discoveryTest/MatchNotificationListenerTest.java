@@ -2,29 +2,52 @@ package com.merge.mergedatingapp.discoveryTest;
 
 import com.merge.mergedatingapp.discovery.events.MatchCreatedEvent;
 import com.merge.mergedatingapp.discovery.events.MatchNotificationListener;
+import com.merge.mergedatingapp.notifications.NotificationFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 class MatchNotificationListenerTest {
 
+    @Mock
+    NotificationFactory notificationFactory;
+
+    @InjectMocks
+    MatchNotificationListener listener;
+
     @Test
-    void onMatchCreated_handlesEventWithoutError() {
-        // Create listener and a sample event
-        MatchNotificationListener listener = new MatchNotificationListener();
+    void onMatchCreated_delegatesToNotificationFactory() {
+        // Build a sample event
+        UUID matchId  = UUID.randomUUID();
+        UUID threadId = UUID.randomUUID();
+        UUID userAId  = UUID.randomUUID();
+        UUID userBId  = UUID.randomUUID();
 
         MatchCreatedEvent event = new MatchCreatedEvent(
-                UUID.randomUUID(),   // matchId
-                UUID.randomUUID(),   // threadId
-                UUID.randomUUID(),   // userAId
-                UUID.randomUUID(),   // userBId
-                Instant.now()        // occurredAt
+                matchId,
+                threadId,
+                userAId,
+                userBId,
+                Instant.now()
         );
 
-        // Just make sure it doesn't throw
-        assertDoesNotThrow(() -> listener.onMatchCreated(event));
+        // Act
+        listener.onMatchCreated(event);
+
+        // Listener forwards to factory
+        verify(notificationFactory).notifyMatch(
+                userAId,
+                userBId,
+                matchId,
+                threadId
+        );
     }
 }
