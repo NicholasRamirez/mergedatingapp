@@ -1,0 +1,144 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "profiles" {
+
+  enum GenderType {
+    MALE;
+    FEMALE;
+    NONBINARY;
+    OTHER;
+    UNSPECIFIED
+  }
+
+  enum PronounsType {
+    HE_HIM;
+    SHE_HER;
+    THEY_THEM;
+    OTHER;
+    UNSPECIFIED
+  }
+
+  enum RelationshipIntentType {
+    LONG_TERM;
+    SHORT_TERM;
+    FRIENDSHIP;
+    CASUAL;
+    UNDECIDED
+  }
+
+  class Profile {
+    -id: UUID
+    -userId: UUID
+    -name: String
+    -birthday: LocalDate
+    -gender: GenderType
+    -pronouns: PronounsType
+    -relationshipIntent: RelationshipIntentType
+    -heightCm: Integer
+    -city: String
+    -discoverable: boolean
+    -lastUpdated: Instant
+  }
+
+  class Photo {
+    -id: UUID
+    -profileId: UUID
+    -url: String
+    -position: int
+  }
+
+  class PromptAnswer {
+    -id: UUID
+    -profileId: UUID
+    -question: String
+    -answer: String
+  }
+
+  interface ProfileRepository <<repository>> {
+    +findByUserId(userId: UUID): Optional<Profile>
+    +existsByUserId(userId: UUID): boolean
+  }
+
+  interface PhotoRepository <<repository>> {
+    +findByProfileIdOrderByPositionAsc(profileId: UUID): List<Photo>
+    +countByProfileId(profileId: UUID): long
+  }
+
+  interface PromptAnswerRepository <<repository>> {
+    +findByProfileId(profileId: UUID): List<PromptAnswer>
+    +countByProfileId(profileId: UUID): long
+    +deleteByProfileId(profileId: UUID): void
+  }
+
+  class ProfileService {
+    +getOrCreateForUser(userId: UUID): Profile
+    +getMyProfile(userId: UUID): ProfileResponse
+    +updateBasics(userId: UUID, req: ProfileUpdateRequest): ProfileResponse
+    +addPhoto(userId: UUID, req: PhotoRequest): void
+    +removePhoto(userId: UUID, photoId: UUID): void
+    +upsertPrompts(userId: UUID, list: List<PromptAnswerRequest>): void
+  }
+
+  class ProfileController {
+    +user(authHeader: String): ProfileResponse
+    +update(authHeader: String, req: ProfileUpdateRequest): ProfileResponse
+    +myPhotos(authHeader: String): List<String>
+    +addPhoto(authHeader: String, req: PhotoRequest): void
+    +deletePhoto(authHeader: String, photoId: UUID): void
+    +myPrompts(authHeader: String): List<ProfileResponse.PromptQA>
+    +upsertPrompts(authHeader: String, list: List<PromptAnswerRequest>): void
+  }
+
+  package "dto" {
+    class ProfileUpdateRequest <<record>> {
+      +name: String
+      +city: String
+      +birthday: LocalDate
+      +gender: GenderType
+      +pronouns: PronounsType
+      +relationshipIntent: RelationshipIntentType
+      +heightCm: Integer
+    }
+    class PhotoRequest <<record>> {
+      +url: String
+      +position: int
+    }
+
+    class PromptAnswerRequest <<record>> {
+      +question: String
+      +answer: String
+    }
+
+    class ProfileResponse <<record>> {
+      +profileId: UUID
+      +userId: UUID
+      +name: String
+      +birthday: LocalDate
+      +gender: GenderType
+      +pronouns: PronounsType
+      +relationshipIntent: RelationshipIntentType
+      +heightCm: Integer
+      +city: String
+      +discoverable: boolean
+      +photos: List<String>
+      +prompts: List<PromptQA>
+    }
+
+    class PromptQA <<record>> {
+      +question: String
+      +answer: String
+    }
+  }
+
+  Profile "1" o-- "*" Photo
+  Profile "1" o-- "*" PromptAnswer
+  ProfileResponse "1" o-- "*" PromptQA
+}
+
+ProfileController --> ProfileService
+ProfileService --> ProfileRepository
+ProfileService --> PhotoRepository
+ProfileService --> PromptAnswerRepository
+@enduml

@@ -1,0 +1,81 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "auth" {
+  class AuthController {
+    +register(req: RegisterRequest): void
+    +login(req: LoginRequest): TokenResponse
+    +user(authHeader: String): UserResponse
+    +logout(authHeader: String): void
+  }
+
+  class AuthService {
+    +register(req: RegisterRequest): void
+    +login(req: LoginRequest): TokenResponse
+    +getUserFromToken(authHeader: String): UserResponse
+    +logout(authHeader: String): void
+  }
+
+  class AuthToken {
+    -id: UUID
+    -userId: UUID
+    -createdAt: Instant
+    -expiresAt: Instant
+    -revoked: boolean
+  }
+
+  interface AuthTokenRepository <<repository>> {
+    +findByIdAndRevokedFalse(id: UUID): Optional<AuthToken>
+    +save(token: AuthToken): AuthToken
+  }
+
+  package "dto" {
+    class LoginRequest <<record>> {
+      +username: String
+      +password: String
+    }
+    class RegisterRequest <<record>> {
+      +username: String
+      +password: String
+    }
+    class TokenResponse <<record>> {
+      +accessToken: String
+    }
+    class UserResponse <<record>> {
+      +userId: UUID
+      +username: String
+    }
+  }
+}
+
+package "users" {
+  class User {
+    -id: UUID
+    -username: String
+    -passwordHash: String
+    -createdAt: Instant
+  }
+
+  interface UserRepository <<repository>> {
+    +findByUsername(username: String): Optional<User>
+    +existsByUsername(username: String): boolean
+  }
+}
+
+package "security" {
+  class PasswordConfig {
+    +passwordEncoder(): PasswordEncoder
+  }
+
+  class SecurityConfig {
+    +filterChain(http: HttpSecurity): SecurityFilterChain
+  }
+}
+
+AuthController --> AuthService
+AuthService --> UserRepository
+AuthService --> AuthTokenRepository
+AuthService --> User
+AuthService --> AuthToken
+@enduml

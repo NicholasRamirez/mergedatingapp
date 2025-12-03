@@ -1,0 +1,211 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "discovery" {
+
+  class SeenCandidate {
+    -viewerUserId: UUID
+    -candidateUserId: UUID
+    -decision: Decision
+    -seenAt: Instant
+  }
+  enum Decision {
+    NONE;
+    PASS;
+    LIKE
+  }
+
+  class LikeEntity {
+    -likerId: UUID
+    -likedId: UUID
+    -createdAt: Instant
+  }
+
+  class Match {
+    -id: UUID
+    -userA: UUID
+    -userB: UUID
+    -active: boolean
+  }
+
+  class ChatThread {
+    -id: UUID
+    -matchId: UUID
+    -archived: boolean
+  }
+
+  interface SeenCandidateRepository <<repository>> {
+    +findByViewerUserIdAndCandidateUserId(viewer: UUID, candidate: UUID): Optional<SeenCandidate>
+    +existsByViewerUserIdAndCandidateUserId(viewer: UUID, candidate: UUID): boolean
+  }
+
+  interface LikeRepository <<repository>> {
+    +existsByLikerIdAndLikedId(a: UUID, b: UUID): boolean
+    +findByLikerIdAndLikedId(a: UUID, b: UUID): Optional<LikeEntity>
+  }
+
+  interface MatchRepository <<repository>> {
+    +findByUserAAndUserB(a: UUID, b: UUID): Optional<Match>
+    +findByUserAOrUserB(userA: UUID, userB: UUID): List<Match>
+  }
+
+  interface ChatThreadRepository <<repository>> {
+    +findByMatchId(matchId: UUID): Optional<ChatThread>
+  }
+
+  interface CandidateOrderingStrategy {
+    +orderCandidates(candidates: List<Profile>, viewerUserId: UUID): List<Profile>
+  }
+
+  class LastUpdatedCandidateOrderingStrategy implements CandidateOrderingStrategy {
+    +orderCandidates(candidates: List<Profile>, viewerUserId: UUID): List<Profile>
+  }
+
+  class DiscoveryService {
+    +next(viewerUserId: UUID): CandidateCard
+    +pass(viewer: UUID, candidate: UUID): void
+    +like(liker: UUID, liked: UUID): LikeResponse
+  }
+
+  class DiscoveryController {
+    +next(authHeader: String): CandidateCard
+    +pass(authHeader: String, req: PassRequest): void
+    +like(authHeader: String, req: LikeRequest): LikeResponse
+  }
+
+  package "events" {
+    class MatchCreatedEvent <<record>> {
+      +matchId: UUID
+      +threadId: UUID
+      +userAId: UUID
+      +userBId: UUID
+      +occurredAt: Instant
+    }
+
+    class MatchNotificationListener <<listener>> {
+      +onMatchCreated(event: MatchCreatedEvent): void
+    }
+  }
+
+  package "notifications" {
+
+    interface NotificationSender {
+      +sendMatchNotification(userA: UUID, userB: UUID, matchId: UUID, threadId: UUID): void
+    }
+
+    class ConsoleNotificationSender implements NotificationSender
+
+    abstract class NotificationFactory {
+      +createSenderForUser(userId: UUID): NotificationSender
+    }
+
+    class DefaultNotificationFactory extends NotificationFactory
+  }
+
+  MatchNotificationListener --> NotificationFactory
+  NotificationFactory --> NotificationSender
+  DefaultNotificationFactory --|> NotificationFactory
+  ConsoleNotificationSender ..|> NotificationSender
+
+  package "dto" {
+    class CandidateCard <<record>> {
+      +userId: UUID
+      +name: String
+      +city: String
+      +photos: List<String>
+      +prompts: List<CandidatePromptQA>
+      +genderType: GenderType
+      +pronounsType: PronounsType
+      +relationshipIntent: RelationshipIntentType
+      +heightCm: Integer
+    }
+
+    class PromptQA <<record>> {
+       +question: String
+       +answer: String
+    }
+
+    class LikeRequest <<record>> {
+      +likedUserId: UUID
+    }
+
+    class PassRequest <<record>> {
+      +candidateUserId: UUID
+    }
+
+    class LikeResponse <<record>> {
+      +status: String
+      +matchId: UUID
+      +threadId: UUID
+    }
+  }
+
+  CandidateCard "1" o-- "*" "PromptQA"
+}
+
+package "chat" {
+
+  class ChatMessage {
+    -threadId: UUID
+    -senderId: UUID
+    -content: String
+  }
+
+  interface ChatMessageRepository <<repository>> {
+    +findByThreadIdOrderBySentAtAsc(threadId: UUID): List<ChatMessage>
+  }
+
+  class ChatService {
+    +listThreads(userId: UUID): List<ThreadSummary>
+    +getMessages(userId: UUID, threadId: UUID): List<MessageResponse>
+    +send(userId: UUID, threadId: UUID, req: MessageRequest): MessageResponse
+  }
+
+  class ChatController {
+    +myThreads(authHeader: String): List<ThreadSummary>
+    +getMessages(authHeader: String, threadId: UUID): List<MessageResponse>
+    +send(authHeader: String, threadId: UUID, req: MessageRequest): MessageResponse
+  }
+
+  package "dto" {
+    class MessageRequest <<record>> {
+      +content: String
+    }
+
+    class MessageResponse <<record>> {
+      +id: UUID
+      +threadId: UUID
+      +senderId: UUID
+      +sentAt: Instant
+      +content: String
+    }
+
+    class ThreadSummary <<record>> {
+      +threadId: UUID
+      +matchId: UUID
+      +partnerUserId: UUID
+      +partnerName: String
+    }
+  }
+}
+
+DiscoveryController --> DiscoveryService
+DiscoveryService --> SeenCandidateRepository
+DiscoveryService --> LikeRepository
+DiscoveryService --> MatchRepository
+DiscoveryService --> ChatThreadRepository
+DiscoveryService --> CandidateOrderingStrategy
+DiscoveryService --> MatchCreatedEvent
+
+LastUpdatedCandidateOrderingStrategy -up-|> CandidateOrderingStrategy
+MatchNotificationListener ..> MatchCreatedEvent
+
+ChatController --> ChatService
+ChatService --> MatchRepository
+ChatService --> ChatThreadRepository
+ChatService --> ChatMessageRepository
+
+Match "1" o-- "1" ChatThread
+ChatThread "1" o-- "*" ChatMessage
+@enduml
