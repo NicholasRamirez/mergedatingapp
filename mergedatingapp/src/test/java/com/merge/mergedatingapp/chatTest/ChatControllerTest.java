@@ -60,7 +60,7 @@ class ChatControllerTest {
         @Bean
         @Primary
         ChatService fakeChatService() {
-            return new ChatService(null, null, null, null) {
+            return new ChatService(null, null, null, null, null) {
                 @Override
                 public List<ThreadSummary> listThreads(UUID userId) {
                     return List.of(

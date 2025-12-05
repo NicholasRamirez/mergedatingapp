@@ -57,7 +57,7 @@ class DiscoveryControllerTest {
         @Bean
         @Primary
         DiscoveryService fakeDiscoveryService() {
-            return new DiscoveryService(null,null,null,null,null,null,null,
+            return new DiscoveryService(null,null,null,null,null,null,null, null,
                     (candidates, viewerId) -> candidates, event -> { })
             {
 

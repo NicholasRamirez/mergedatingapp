@@ -6,6 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.UUID;
+
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -17,9 +19,10 @@ class UserCommandExecutorTest {
     @Test
     void execute_invokesCommandExecute() {
         UserCommandExecutor executor = new UserCommandExecutor();
+        UUID userId = UUID.randomUUID();
 
-        executor.execute(command);
+        executor.execute(command, userId);
 
-        verify(command).execute();
+        verify(command).execute(userId);
     }
 }

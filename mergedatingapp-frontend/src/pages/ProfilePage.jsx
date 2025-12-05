@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import NavBar from "../components/NavBar";
 import { getMe, updateBasics, addPhoto, savePrompts } from "../api/profile";
+import { deleteMyAccount } from "../api/account";
+import { logout } from "../api/auth";
 
 const PRESET_PROMPTS = [
     "Tabs or spaces?",
@@ -12,6 +16,8 @@ const PRESET_PROMPTS = [
 ];
 
 export default function ProfilePage() {
+    const navigate = useNavigate();
+
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState("");
     const [ok, setOk] = useState("");
@@ -47,7 +53,12 @@ export default function ProfilePage() {
                 setHeightCm(data.heightCm ?? 170);
                 if (data.prompts?.items?.length) {
                     // normalize to {question, answer}
-                    setPrompts(data.prompts.items.map(p => ({ question: p.question, answer: p.answer || "" })));
+                    setPrompts(
+                        data.prompts.items.map((p) => ({
+                            question: p.question,
+                            answer: p.answer || "",
+                        }))
+                    );
                 }
                 setDiscoverable(Boolean(data.discoverable));
             } catch (e) {
@@ -66,37 +77,74 @@ export default function ProfilePage() {
     }
 
     async function saveBasics() {
-        setErr(""); setOk("");
+        setErr("");
+        setOk("");
         try {
             await updateBasics({
-                name, city, birthday,
-                gender, pronouns,
+                name,
+                city,
+                birthday,
+                gender,
+                pronouns,
                 relationshipIntent: intent,
                 heightCm: Number(heightCm),
             });
             setOk("Basics saved");
             await refreshDiscoverable();
-        } catch (e) { setErr(e?.response?.data?.message || e.message); }
+        } catch (e) {
+            setErr(e?.response?.data?.message || e.message);
+        }
     }
 
     async function addOnePhoto() {
         if (!photoUrl.trim()) return;
-        setErr(""); setOk("");
+        setErr("");
+        setOk("");
         try {
             await addPhoto(photoUrl.trim(), 0);
             setOk("Photo added");
             setPhotoUrl("");
             await refreshDiscoverable();
-        } catch (e) { setErr(e?.response?.data?.message || e.message); }
+        } catch (e) {
+            setErr(e?.response?.data?.message || e.message);
+        }
     }
 
     async function saveMyPrompts() {
-        setErr(""); setOk("");
+        setErr("");
+        setOk("");
         try {
             await savePrompts(prompts);
             setOk("Prompts saved");
             await refreshDiscoverable();
-        } catch (e) { setErr(e?.response?.data?.message || e.message); }
+        } catch (e) {
+            setErr(e?.response?.data?.message || e.message);
+        }
+    }
+
+    // Delete account handler
+    async function handleDeleteAccount() {
+        setErr("");
+        setOk("");
+
+        const confirmed = window.confirm(
+            "Are you sure you want to delete your account? " +
+            "This will remove your profile, matches, and messages. This cannot be undone."
+        );
+        if (!confirmed) return;
+
+        try {
+            // Delete on backend
+            await deleteMyAccount();
+
+            // Log out / clear token
+            await logout();
+
+            // Redirect to login page
+            navigate("/login", { replace: true });
+        } catch (e) {
+            setErr(e?.response?.data?.message || e.message);
+        }
     }
 
     const badge =
@@ -120,8 +168,8 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-3">
                     <h1 className="text-2xl font-bold">My Profile</h1>
                     <span className={`text-sm px-2 py-1 rounded ${badge}`}>
-            {discoverable ? "discoverable: true" : "discoverable: false"}
-          </span>
+                        {discoverable ? "discoverable: true" : "discoverable: false"}
+                    </span>
                 </div>
 
                 {err && <div className="text-red-600">{err}</div>}
@@ -131,59 +179,145 @@ export default function ProfilePage() {
                 <section className="bg-white rounded-2xl shadow p-5 grid gap-3">
                     <div>
                         <h2 className="font-semibold">Basics</h2>
-                        <p className="text-xs text-gray-500">Fill these to become discoverable.</p>
+                        <p className="text-xs text-gray-500">
+                            Fill these to become discoverable.
+                        </p>
                     </div>
 
                     <div className="grid gap-3">
                         <div className="grid gap-1">
-                            <label htmlFor="name" className="text-sm text-gray-600">Name</label>
-                            <input id="name" className="border p-2 rounded" value={name} onChange={e=>setName(e.target.value)} />
+                            <label
+                                htmlFor="name"
+                                className="text-sm text-gray-600"
+                            >
+                                Name
+                            </label>
+                            <input
+                                id="name"
+                                className="border p-2 rounded"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
                         </div>
 
                         <div className="grid gap-1">
-                            <label htmlFor="city" className="text-sm text-gray-600">City</label>
-                            <input id="city" className="border p-2 rounded" value={city} onChange={e=>setCity(e.target.value)} />
+                            <label
+                                htmlFor="city"
+                                className="text-sm text-gray-600"
+                            >
+                                City
+                            </label>
+                            <input
+                                id="city"
+                                className="border p-2 rounded"
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                            />
                         </div>
 
                         <div className="grid gap-1">
-                            <label htmlFor="birthday" className="text-sm text-gray-600">Birthday (YYYY-MM-DD)</label>
-                            <input id="birthday" className="border p-2 rounded" placeholder="2000-05-12"
-                                   value={birthday} onChange={e=>setBirthday(e.target.value)} />
+                            <label
+                                htmlFor="birthday"
+                                className="text-sm text-gray-600"
+                            >
+                                Birthday (YYYY-MM-DD)
+                            </label>
+                            <input
+                                id="birthday"
+                                className="border p-2 rounded"
+                                placeholder="2000-05-12"
+                                value={birthday}
+                                onChange={(e) => setBirthday(e.target.value)}
+                            />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="grid gap-1">
-                                <label htmlFor="gender" className="text-sm text-gray-600">Gender</label>
-                                <select id="gender" className="border p-2 rounded" value={gender} onChange={e=>setGender(e.target.value)}>
-                                    <option>UNSPECIFIED</option><option>MALE</option><option>FEMALE</option>
-                                    <option>NONBINARY</option><option>OTHER</option>
+                                <label
+                                    htmlFor="gender"
+                                    className="text-sm text-gray-600"
+                                >
+                                    Gender
+                                </label>
+                                <select
+                                    id="gender"
+                                    className="border p-2 rounded"
+                                    value={gender}
+                                    onChange={(e) => setGender(e.target.value)}
+                                >
+                                    <option>UNSPECIFIED</option>
+                                    <option>MALE</option>
+                                    <option>FEMALE</option>
+                                    <option>NONBINARY</option>
+                                    <option>OTHER</option>
                                 </select>
                             </div>
 
                             <div className="grid gap-1">
-                                <label htmlFor="pronouns" className="text-sm text-gray-600">Pronouns</label>
-                                <select id="pronouns" className="border p-2 rounded" value={pronouns} onChange={e=>setPronouns(e.target.value)}>
-                                    <option>UNSPECIFIED</option><option>HE_HIM</option><option>SHE_HER</option>
-                                    <option>THEY_THEM</option><option>OTHER</option>
+                                <label
+                                    htmlFor="pronouns"
+                                    className="text-sm text-gray-600"
+                                >
+                                    Pronouns
+                                </label>
+                                <select
+                                    id="pronouns"
+                                    className="border p-2 rounded"
+                                    value={pronouns}
+                                    onChange={(e) => setPronouns(e.target.value)}
+                                >
+                                    <option>UNSPECIFIED</option>
+                                    <option>HE_HIM</option>
+                                    <option>SHE_HER</option>
+                                    <option>THEY_THEM</option>
+                                    <option>OTHER</option>
                                 </select>
                             </div>
 
                             <div className="grid gap-1">
-                                <label htmlFor="intent" className="text-sm text-gray-600">Relationship intent</label>
-                                <select id="intent" className="border p-2 rounded" value={intent} onChange={e=>setIntent(e.target.value)}>
-                                    <option>UNDECIDED</option><option>LONG_TERM</option><option>SHORT_TERM</option>
-                                    <option>FRIENDSHIP</option><option>CASUAL</option>
+                                <label
+                                    htmlFor="intent"
+                                    className="text-sm text-gray-600"
+                                >
+                                    Relationship intent
+                                </label>
+                                <select
+                                    id="intent"
+                                    className="border p-2 rounded"
+                                    value={intent}
+                                    onChange={(e) => setIntent(e.target.value)}
+                                >
+                                    <option>UNDECIDED</option>
+                                    <option>LONG_TERM</option>
+                                    <option>SHORT_TERM</option>
+                                    <option>FRIENDSHIP</option>
+                                    <option>CASUAL</option>
                                 </select>
                             </div>
 
                             <div className="grid gap-1">
-                                <label htmlFor="height" className="text-sm text-gray-600">Height (cm)</label>
-                                <input id="height" type="number" className="border p-2 rounded"
-                                       value={heightCm} onChange={e=>setHeightCm(e.target.value)} />
+                                <label
+                                    htmlFor="height"
+                                    className="text-sm text-gray-600"
+                                >
+                                    Height (cm)
+                                </label>
+                                <input
+                                    id="height"
+                                    type="number"
+                                    className="border p-2 rounded"
+                                    value={heightCm}
+                                    onChange={(e) =>
+                                        setHeightCm(e.target.value)
+                                    }
+                                />
                             </div>
                         </div>
 
-                        <button className="bg-black text-white rounded px-4 py-2 w-fit" onClick={saveBasics}>
+                        <button
+                            className="bg-black text-white rounded px-4 py-2 w-fit"
+                            onClick={saveBasics}
+                        >
                             Save basics
                         </button>
                     </div>
@@ -193,11 +327,26 @@ export default function ProfilePage() {
                 <section className="bg-white rounded-2xl shadow p-5 grid gap-3">
                     <h2 className="font-semibold">Photo</h2>
                     <div className="grid gap-1">
-                        <label htmlFor="photoUrl" className="text-sm text-gray-600">Photo URL</label>
-                        <input id="photoUrl" className="border p-2 rounded" placeholder="https://…"
-                               value={photoUrl} onChange={e=>setPhotoUrl(e.target.value)} />
+                        <label
+                            htmlFor="photoUrl"
+                            className="text-sm text-gray-600"
+                        >
+                            Photo URL
+                        </label>
+                        <input
+                            id="photoUrl"
+                            className="border p-2 rounded"
+                            placeholder="https://…"
+                            value={photoUrl}
+                            onChange={(e) => setPhotoUrl(e.target.value)}
+                        />
                     </div>
-                    <button className="border rounded px-4 py-2 w-fit" onClick={addOnePhoto}>Add photo</button>
+                    <button
+                        className="border rounded px-4 py-2 w-fit"
+                        onClick={addOnePhoto}
+                    >
+                        Add photo
+                    </button>
                 </section>
 
                 {/* PROMPTS */}
@@ -205,31 +354,52 @@ export default function ProfilePage() {
                     <h2 className="font-semibold">Prompts</h2>
 
                     {prompts.map((p, i) => (
-                        <div key={i} className="grid gap-2 bg-gray-50 rounded-xl p-3">
+                        <div
+                            key={i}
+                            className="grid gap-2 bg-gray-50 rounded-xl p-3"
+                        >
                             <div className="grid gap-1">
-                                <label className="text-sm text-gray-600">Prompt {i + 1}</label>
+                                <label className="text-sm text-gray-600">
+                                    Prompt {i + 1}
+                                </label>
                                 <select
                                     className="border p-2 rounded"
                                     value={p.question || ""}
-                                    onChange={e => {
+                                    onChange={(e) => {
                                         const copy = [...prompts];
-                                        copy[i] = { ...p, question: e.target.value };
+                                        copy[i] = {
+                                            ...p,
+                                            question: e.target.value,
+                                        };
                                         setPrompts(copy);
                                     }}
                                 >
-                                    <option value="">{p.question ? `(Keep) ${p.question}` : "Choose a preset…"}</option>
-                                    {PRESET_PROMPTS.map(q => <option key={q} value={q}>{q}</option>)}
+                                    <option value="">
+                                        {p.question
+                                            ? `(Keep) ${p.question}`
+                                            : "Choose a preset…"}
+                                    </option>
+                                    {PRESET_PROMPTS.map((q) => (
+                                        <option key={q} value={q}>
+                                            {q}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
                             <div className="grid gap-1">
-                                <label className="text-sm text-gray-600">Your answer</label>
+                                <label className="text-sm text-gray-600">
+                                    Your answer
+                                </label>
                                 <input
                                     className="border p-2 rounded"
                                     value={p.answer}
-                                    onChange={e => {
+                                    onChange={(e) => {
                                         const copy = [...prompts];
-                                        copy[i] = { ...p, answer: e.target.value };
+                                        copy[i] = {
+                                            ...p,
+                                            answer: e.target.value,
+                                        };
                                         setPrompts(copy);
                                     }}
                                 />
@@ -239,15 +409,28 @@ export default function ProfilePage() {
 
                     <div className="flex gap-3">
                         <button
-                            className="border rounded px-4 py-2"
-                            onClick={() => setPrompts(prev => [...prev, { question: "", answer: "" }])}
+                            className="bg-black text-white rounded px-4 py-2"
+                            onClick={saveMyPrompts}
                         >
-                            + Add another prompt
-                        </button>
-                        <button className="bg-black text-white rounded px-4 py-2" onClick={saveMyPrompts}>
                             Save prompts
                         </button>
                     </div>
+                </section>
+
+                {/* Account deletion with Delete button */}
+                <section className="bg-white rounded-2xl shadow p-5 grid gap-3 border border-red-200">
+                    <h2 className="font-semibold text-red-700">Account Deletion</h2>
+                    <p className="text-xs text-red-500">
+                        Deleting your account will remove your profile, matches,
+                        and chat history. This cannot be undone.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handleDeleteAccount}
+                        className="w-fit px-4 py-2 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+                    >
+                        Delete my account
+                    </button>
                 </section>
             </div>
         </div>

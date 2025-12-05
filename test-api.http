@@ -1,10 +1,10 @@
-@tokenA = 0d5b0b50-154d-4901-806e-05cb981bf600
-@tokenB = 74c1b374-bf76-4b35-8904-041cf9bab5c8
+@tokenA = 645734fd-81da-490b-b4a4-065b5c225bc5
+@tokenB = 0d059857-e3fb-4e87-8c55-d9b12f70f84b
 
-@userA = 903211ce-2854-4c45-9d3b-ab118e17b97d
-@userB = e04ce8f8-89a9-42bb-b8de-b42c155afa02
+@userA = 8d092d1e-8525-4eba-9d2f-8e8d788b9444
+@userB = 3c38b975-1a1b-4e03-83d2-d3553a7e63a3
 
-@threadId = bf86bca8-c7ec-460b-b4cf-1fa6a3897fcc
+@threadId = cf0835ba-1bfa-4503-a5ce-3426bbc11290
 
 # USER A
 
@@ -198,4 +198,25 @@ Authorization: Bearer {{tokenB}}
 
 ### A fetches messages
 GET http://localhost:8080/api/threads/{{threadId}}/messages
+Authorization: Bearer {{tokenA}}
+
+### Delete user A account
+DELETE http://localhost:8080/api/account
+Authorization: Bearer {{tokenA}}
+
+### Check that old token is now invalid
+GET http://localhost:8080/api/auth/user
+Authorization: Bearer {{tokenA}}
+
+### User A blocks user B
+POST http://localhost:8080/api/account/block
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "blockedUserId": "{{userB}}"
+}
+
+### A fetches next discovery card (should NOT be B anymore)
+GET http://localhost:8080/api/discovery/next
 Authorization: Bearer {{tokenA}}

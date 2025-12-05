@@ -7,4 +7,7 @@ import java.util.UUID;
 public interface SeenCandidateRepository extends JpaRepository<SeenCandidate, UUID> {
     Optional<SeenCandidate> findByViewerUserIdAndCandidateUserId(UUID viewer, UUID candidate);
     boolean existsByViewerUserIdAndCandidateUserId(UUID viewer, UUID candidate);
+
+    void deleteByViewerUserId(UUID viewerUserId);
+    void deleteByCandidateUserId(UUID candidateUserId);
 }

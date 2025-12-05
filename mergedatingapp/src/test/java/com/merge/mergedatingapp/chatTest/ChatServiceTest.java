@@ -12,6 +12,7 @@ import com.merge.mergedatingapp.discovery.Match;
 import com.merge.mergedatingapp.discovery.MatchRepository;
 import com.merge.mergedatingapp.profiles.Profile;
 import com.merge.mergedatingapp.profiles.ProfileRepository;
+import com.merge.mergedatingapp.users.BlockedUserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -42,6 +43,9 @@ class ChatServiceTest {
 
     @Mock
     ProfileRepository profiles;
+
+    @Mock
+    BlockedUserRepository blockedRepo;
 
     @InjectMocks
     ChatService svc;

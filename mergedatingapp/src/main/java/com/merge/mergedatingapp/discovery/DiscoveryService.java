@@ -3,6 +3,7 @@ package com.merge.mergedatingapp.discovery;
 import com.merge.mergedatingapp.discovery.dto.*;
 import com.merge.mergedatingapp.profiles.*;
 import com.merge.mergedatingapp.discovery.events.*;
+import com.merge.mergedatingapp.users.BlockedUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ public class DiscoveryService {
     private final MatchRepository matchRepo;
     private final ChatThreadRepository chatRepo;
 
+    private final BlockedUserRepository blockedRepo;
     private final CandidateOrderingStrategy candidateOrderingStrategy;
     private final ApplicationEventPublisher events;
 
@@ -34,6 +36,9 @@ public class DiscoveryService {
         var discoverable = profiles.findAll().stream()
                 .filter(p -> p.isDiscoverable())
                 .filter(p -> !p.getUserId().equals(viewerUserId))
+                .filter(p -> !blockedRepo.existsByBlockerIdAndBlockedId(viewerUserId, p.getUserId())
+                        && !blockedRepo.existsByBlockerIdAndBlockedId(p.getUserId(), viewerUserId))
+                .filter(p -> !seenRepo.existsByViewerUserIdAndCandidateUserId(viewerUserId, p.getUserId()))
                 .toList();
 
         // Delegate ordering to Strategy

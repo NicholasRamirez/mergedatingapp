@@ -11,14 +11,14 @@ import java.util.UUID;
 public class AccountCommandService {
 
     private final UserCommandExecutor executor;
-
-    public void blockUser(UUID blockerId, UUID blockedId) {
-        var cmd = new BlockUserCommand(blockerId, blockedId);
-        executor.execute(cmd);
-    }
+    private final DeleteAccountCommand deleteAccountCommand;
+    private final BlockUserCommand blockUserCommand;
 
     public void deleteAccount(UUID userId) {
-        var cmd = new DeleteAccountCommand(userId);
-        executor.execute(cmd);
+        executor.execute(deleteAccountCommand, userId);
+    }
+
+    public void blockUser(UUID blockerId, UUID blockedId) {
+        blockUserCommand.execute(blockerId, blockedId);
     }
 }

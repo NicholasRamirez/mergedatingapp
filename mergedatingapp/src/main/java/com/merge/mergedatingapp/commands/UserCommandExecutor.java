@@ -1,16 +1,15 @@
 package com.merge.mergedatingapp.commands;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
-@Service
-@Slf4j
+import java.util.UUID;
+
+@Component
+@RequiredArgsConstructor
 public class UserCommandExecutor {
 
-    public void execute(UserCommand command) {
-        var name = command.getClass().getSimpleName();
-        log.info("Executing command: {}", name);
-        command.execute();
-        log.info("Finished command: {}", name);
+    public void execute(UserCommand command, UUID userId) {
+        command.execute(userId);
     }
 }

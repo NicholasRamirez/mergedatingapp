@@ -7,6 +7,7 @@ import com.merge.mergedatingapp.discovery.ChatThread;
 import com.merge.mergedatingapp.discovery.ChatThreadRepository;
 import com.merge.mergedatingapp.discovery.Match;
 import com.merge.mergedatingapp.discovery.MatchRepository;
+import com.merge.mergedatingapp.users.BlockedUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,21 +26,47 @@ public class ChatService {
     private final ChatThreadRepository threads;
     private final ChatMessageRepository messages;
     private final ProfileRepository profiles;
+    private final BlockedUserRepository blockedRepo;
 
     @Transactional(readOnly = true)
     public List<ThreadSummary> listThreads(UUID userId) {
         var ms = matches.findByUserAOrUserB(userId, userId);
-        return ms.stream().map(m -> {
-            var t = threads.findByMatchId(m.getId()).orElseThrow(() ->
-                    new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Thread missing for match"));
-            UUID partner = m.getUserA().equals(userId) ? m.getUserB() : m.getUserA();
 
-            // Look up the partner's profile to get their display name
-            var profileOpt = profiles.findByUserId(partner);
-            String partnerName = profileOpt.map(p -> p.getName()).orElse(null);
+        return ms.stream()
+                .filter(m -> {
+                    UUID partner = m.getUserA().equals(userId)
+                            ? m.getUserB()
+                            : m.getUserA();
 
-            return new ThreadSummary(t.getId(), m.getId(), partner, partnerName);
-        }).toList();
+                    boolean blockedEitherWay =
+                            blockedRepo.existsByBlockerIdAndBlockedId(userId, partner) ||
+                                    blockedRepo.existsByBlockerIdAndBlockedId(partner, userId);
+
+                    return !blockedEitherWay;
+                })
+                .map(m -> {
+                    var t = threads.findByMatchId(m.getId()).orElseThrow(() ->
+                            new ResponseStatusException(
+                                    HttpStatus.INTERNAL_SERVER_ERROR,
+                                    "Thread missing for match"
+                            ));
+
+                    UUID partner = m.getUserA().equals(userId)
+                            ? m.getUserB()
+                            : m.getUserA();
+
+                    // Look up the partner's profile to get their display name
+                    var profileOpt = profiles.findByUserId(partner);
+                    String partnerName = profileOpt.map(p -> p.getName()).orElse(null);
+
+                    return new ThreadSummary(
+                            t.getId(),
+                            m.getId(),
+                            partner,
+                            partnerName
+                    );
+                })
+                .toList();
     }
 
     @Transactional(readOnly = true)

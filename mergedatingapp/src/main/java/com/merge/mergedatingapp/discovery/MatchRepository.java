@@ -9,4 +9,6 @@ public interface MatchRepository extends JpaRepository<Match, UUID> {
     Optional<Match> findByUserAAndUserB(UUID a, UUID b);
 
     List<Match> findByUserAOrUserB(UUID userA, UUID userB);
+
+    void deleteAll(Iterable<? extends Match> matches);
 }

@@ -5,6 +5,7 @@ import {
     getMessages,
     sendMessage as apiSendMessage,
 } from "../api/chat";
+import { blockUser } from "../api/account";
 
 export default function ChatPage() {
     const [threads, setThreads] = useState([]);
@@ -13,6 +14,7 @@ export default function ChatPage() {
     const [typed, setTyped] = useState("");
     const [loadingThreads, setLoadingThreads] = useState(true);
     const [sending, setSending] = useState(false);
+    const [blockError, setBlockError] = useState("");
 
     // Load all threads on mount
     useEffect(() => {
@@ -74,6 +76,36 @@ export default function ChatPage() {
         }
     }
 
+    // Block the current conversation partner
+    async function handleBlockUser() {
+        if (!activeThread) return;
+
+        const ok = window.confirm(
+            `Block ${activeThread.partnerName || "this user"}?\n` +
+            "You will no longer see them in Discover."
+        );
+        if (!ok) return;
+
+        setBlockError("");
+
+        try {
+            // Call backend: /api/account/block
+            await blockUser(activeThread.partnerUserId);
+
+            // Locally remove this thread from list & clear messages
+            setThreads((prev) =>
+                prev.filter((t) => t.threadId !== activeThread.threadId)
+            );
+            setActiveThread(null);
+            setMessages([]);
+        } catch (e) {
+            console.error("blockUser failed", e);
+            setBlockError(
+                e?.response?.data?.message || "Failed to block user. Please try again."
+            );
+        }
+    }
+
     // Label + side for bubbles
     function isMine(message, thread) {
         if (!thread) return false;
@@ -105,7 +137,9 @@ export default function ChatPage() {
                     {!loadingThreads && threads.length === 0 && (
                         <div className="px-4 py-3 text-sm text-gray-600">
                             You don&apos;t have any matches yet.{" "}
-                            <span className="font-semibold">Go like some people on Discover!</span>
+                            <span className="font-semibold">
+                Go like some people on Discover!
+              </span>
                         </div>
                     )}
 
@@ -120,9 +154,7 @@ export default function ChatPage() {
                                         onClick={() => setActiveThread(t)}
                                         className={
                                             "w-full text-left px-4 py-2 text-sm flex items-center justify-between " +
-                                            (isActive
-                                                ? "bg-white font-semibold"
-                                                : "hover:bg-gray-100")
+                                            (isActive ? "bg-white font-semibold" : "hover:bg-gray-100")
                                         }
                                     >
                                         <span className="truncate">{name}</span>
@@ -141,15 +173,29 @@ export default function ChatPage() {
                         </div>
                     ) : (
                         <>
-                            {/* Header – show only name */}
+                            {/* Header – name + block button */}
                             <div className="px-6 py-3 border-b border-gray-200 flex items-center justify-between">
                                 <div>
                                     <div className="text-lg font-semibold">{activeName}</div>
-                                    <div className="text-xs text-gray-500">
-
-                                    </div>
+                                    <div className="text-xs text-gray-500" />
                                 </div>
+
+                                {/* Block user button */}
+                                <button
+                                    type="button"
+                                    onClick={handleBlockUser}
+                                    className="text-xs px-3 py-1 rounded-full border border-red-500 text-red-600 hover:bg-red-50"
+                                >
+                                    Block user
+                                </button>
                             </div>
+
+                            {/* Show block error if any */}
+                            {blockError && (
+                                <div className="px-6 py-2 text-xs text-red-600 border-b border-red-100 bg-red-50">
+                                    {blockError}
+                                </div>
+                            )}
 
                             {/* Messages */}
                             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-gray-50">

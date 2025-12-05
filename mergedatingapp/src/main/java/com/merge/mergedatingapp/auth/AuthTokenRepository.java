@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface AuthTokenRepository extends JpaRepository<AuthToken, UUID> {
 
     Optional<AuthToken> findByIdAndRevokedFalse(UUID id);
+
+    void deleteByUserId(UUID userId);
 }

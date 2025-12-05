@@ -6,6 +6,7 @@ import com.merge.mergedatingapp.discovery.dto.LikeResponse;
 import com.merge.mergedatingapp.discovery.events.MatchCreatedEvent;
 import com.merge.mergedatingapp.profiles.*;
 import com.merge.mergedatingapp.profiles.Enums.*;
+import com.merge.mergedatingapp.users.BlockedUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +38,7 @@ class DiscoveryServiceTest {
     @Mock private LikeRepository likeRepo;
     @Mock private MatchRepository matchRepo;
     @Mock private ChatThreadRepository chatRepo;
+    @Mock private BlockedUserRepository blockedRepo;
     @Mock private CandidateOrderingStrategy orderingStrategy;
     @Mock private ApplicationEventPublisher events;
 
@@ -81,6 +83,10 @@ class DiscoveryServiceTest {
         when(seenRepo.existsByViewerUserIdAndCandidateUserId(viewerId, candidateUserId))
                 .thenReturn(false);
 
+        // Viewer has not blocked candidate
+        when(blockedRepo.existsByBlockerIdAndBlockedId(viewerId, candidateUserId))
+                .thenReturn(false);
+
         // photos + prompts
         when(photos.findByProfileIdOrderByPositionAsc(profileId))
                 .thenReturn(List.of(
@@ -108,7 +114,8 @@ class DiscoveryServiceTest {
         assertThat(card.relationshipIntent()).isEqualTo(RelationshipIntentType.LONG_TERM);
         assertThat(card.heightCm()).isEqualTo(165);
 
-        verify(seenRepo).existsByViewerUserIdAndCandidateUserId(viewerId, candidateUserId);
+        verify(seenRepo, atLeastOnce())
+                .existsByViewerUserIdAndCandidateUserId(viewerId, candidateUserId);
         verify(orderingStrategy).orderCandidates(anyList(), eq(viewerId));
     }
 

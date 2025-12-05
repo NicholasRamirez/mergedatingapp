@@ -1,20 +1,39 @@
 package com.merge.mergedatingapp.commands;
 
+import com.merge.mergedatingapp.users.BlockedUser;
+import com.merge.mergedatingapp.users.BlockedUserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
+@Component
 @RequiredArgsConstructor
-@Slf4j
-public class BlockUserCommand implements UserCommand {
+public class BlockUserCommand {
 
-    private final UUID blockerId;
-    private final UUID blockedId;
+    private final BlockedUserRepository blockedRepo;
 
-    @Override
-    public void execute() {
-        // TODO: implement real block logic (persist block, hide chats, etc.)
-        log.info("BlockUserCommand: user {} is blocking user {}", blockerId, blockedId);
+    @Transactional
+    public void execute(UUID blockerId, UUID blockedId) {
+        // no self-block
+        if (blockerId.equals(blockedId)) {
+            return;
+        }
+
+        // already blocked? no-op
+        if (blockedRepo.existsByBlockerIdAndBlockedId(blockerId, blockedId)) {
+            return;
+        }
+
+        BlockedUser entity = BlockedUser.builder()
+                .id(UUID.randomUUID())
+                .blockerId(blockerId)
+                .blockedId(blockedId)
+                .createdAt(Instant.now())
+                .build();
+
+        blockedRepo.save(entity);
     }
 }
