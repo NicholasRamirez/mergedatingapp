@@ -1,0 +1,106 @@
+@startuml
+title Merge Dating App – Sequence (Final Part 2)
+
+actor User
+participant "Web App (Browser)" as FE
+participant "Merge Server" as BE
+
+' LOGIN / SIGN UP
+User -> FE: Open Merge site
+FE -> BE: Request initial page
+BE --> FE: HTML / CSS / JS
+
+User -> FE: Click "Log in" or "Sign up"
+User -> FE: Enter email & password
+FE -> BE: Submit credentials
+BE --> FE: Success + auth token
+FE --> User: Show logged-in state
+
+' PROFILE
+User -> FE: Open Profile page
+FE -> BE: Request profile data
+BE --> FE: Profile details (if any)
+FE --> User: Render profile page
+
+alt Profile incomplete
+    User -> FE: Enter profile info,\nphotos & prompts
+    FE -> BE: Save profile
+    BE --> FE: Profile saved + discoverable
+    FE --> User: Show "Profile saved"
+else Profile complete
+    FE --> User: Show profile summary
+end
+
+opt User chooses "Delete Account"
+    User -> FE: Click "Delete Account"
+    FE -> BE: Request account deletion
+    BE -> BE: Delete user\n(profile, matches,\nmessages, blocks, tokens)
+    BE --> FE: Account deleted successfully
+    FE --> User: Log out + redirect to landing
+    destroy BE
+end
+
+' DISCOVERY
+User -> FE: Open Discover
+loop For each candidate
+    FE -> BE: Request next candidate
+    BE -> BE: Filter blocked users
+    BE --> FE: Candidate card
+    FE --> User: Display candidate
+
+    alt User presses "Pass"
+        User -> FE: Click Pass
+        FE -> BE: Record pass
+        BE --> FE: Pass acknowledged
+    else User presses "Like"
+        User -> FE: Click Like
+        FE -> BE: Record like
+        BE --> FE: Like response\n(liked or matched)
+
+        alt Match created
+            BE -> BE: Create chat thread
+            BE -> BE: Publish MatchCreatedEvent
+            FE --> User: Show "It's a match"
+            opt User chooses "Open chat"
+                break
+            end
+        else One-sided like
+            FE --> User: Show "Like sent"
+        end
+    end
+end
+
+' CHAT
+User -> FE: Open Chat
+FE -> BE: Load matches & threads
+BE --> FE: Threads list
+FE --> User: Show chat sidebar
+
+User -> FE: Select conversation
+FE -> BE: Load messages
+BE --> FE: Message history
+FE --> User: Show chat
+
+opt User blocks the other user
+    User -> FE: Click "Block User"
+    FE -> BE: Block user request
+    BE -> BE: Save block
+    BE -> BE: Remove match & chat thread
+    BE --> FE: Block confirmed
+    FE --> User: Remove conversation\nand return to chat list
+end
+
+loop While chatting
+    User -> FE: Send message
+    FE -> BE: Send message content
+    BE --> FE: Saved message
+    FE --> User: Append message to chat
+end
+
+' OPTIONAL NAVIGATION
+opt User navigates elsewhere
+    User -> FE: Go to Profile / Discover
+    ... reuse flows ...
+end
+
+@enduml
