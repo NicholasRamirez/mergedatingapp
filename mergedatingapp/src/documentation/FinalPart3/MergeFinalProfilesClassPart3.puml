@@ -1,0 +1,207 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "profiles" {
+
+  enum GenderType {
+    MALE;
+    FEMALE;
+    NONBINARY;
+    OTHER;
+    UNSPECIFIED
+  }
+
+  enum PronounsType {
+    HE_HIM;
+    SHE_HER;
+    THEY_THEM;
+    OTHER;
+    UNSPECIFIED
+  }
+
+  enum RelationshipIntentType {
+    LONG_TERM;
+    SHORT_TERM;
+    FRIENDSHIP;
+    CASUAL;
+    UNDECIDED
+  }
+
+  class Profile {
+    -id: UUID
+    -userId: UUID
+    -name: String
+    -birthday: LocalDate
+    -gender: GenderType
+    -pronouns: PronounsType
+    -relationshipIntent: RelationshipIntentType
+    -heightCm: Integer
+    -city: String
+    -discoverable: boolean
+    -lastUpdated: Instant
+  }
+
+  class Photo {
+    -id: UUID
+    -profileId: UUID
+    -url: String
+    -position: int
+  }
+
+  class PromptAnswer {
+    -id: UUID
+    -profileId: UUID
+    -question: String
+    -answer: String
+  }
+
+  interface ProfileRepository <<repository>> {
+    +findByUserId(userId: UUID): Optional<Profile>
+    +existsByUserId(userId: UUID): boolean
+    +deleteByUserId(userId: UUID): void
+  }
+
+  interface PhotoRepository <<repository>> {
+    +findByProfileIdOrderByPositionAsc(profileId: UUID): List<Photo>
+    +countByProfileId(profileId: UUID): long
+    +deleteByProfileId(profileId: UUID): void
+  }
+
+  interface PromptAnswerRepository <<repository>> {
+    +findByProfileId(profileId: UUID): List<PromptAnswer>
+    +countByProfileId(profileId: UUID): long
+    +deleteByProfileId(profileId: UUID): void
+  }
+
+  class ProfileService {
+    -profiles: ProfileRepository
+    -photos: PhotoRepository
+    -prompts: PromptAnswerRepository
+
+    +getOrCreateForUser(userId: UUID): Profile
+    +getMyProfile(userId: UUID): ProfileResponse
+    +updateBasics(userId: UUID, req: ProfileUpdateRequest): ProfileResponse
+    +addPhoto(userId: UUID, req: PhotoRequest): void
+    +removePhoto(userId: UUID, photoId: UUID): void
+    +upsertPrompts(userId: UUID, list: List<PromptAnswerRequest>): void
+    -recalcDiscoverable(profile: Profile): void
+  }
+
+  class ProfileController {
+    +user(authHeader: String): ProfileResponse
+    +update(authHeader: String, req: ProfileUpdateRequest): ProfileResponse
+    +myPhotos(authHeader: String): List<String>
+    +addPhoto(authHeader: String, req: PhotoRequest): void
+    +deletePhoto(authHeader: String, photoId: UUID): void
+    +myPrompts(authHeader: String): List<ProfileResponse.PromptQA>
+    +upsertPrompts(authHeader: String, list: List<PromptAnswerRequest>): void
+  }
+
+  package "dto" {
+    class ProfileUpdateRequest <<record>> {
+      +name: String
+      +city: String
+      +birthday: LocalDate
+      +gender: GenderType
+      +pronouns: PronounsType
+      +relationshipIntent: RelationshipIntentType
+      +heightCm: Integer
+    }
+
+    class PhotoRequest <<record>> {
+      +url: String
+      +position: int
+    }
+
+    class PromptAnswerRequest <<record>> {
+      +question: String
+      +answer: String
+    }
+
+    class ProfileResponse <<record>> {
+      +profileId: UUID
+      +userId: UUID
+      +name: String
+      +birthday: LocalDate
+      +gender: GenderType
+      +pronouns: PronounsType
+      +relationshipIntent: RelationshipIntentType
+      +heightCm: Integer
+      +city: String
+      +discoverable: boolean
+      +photos: List<String>
+      +prompts: List<PromptQA>
+    }
+
+    class PromptQA <<record>> {
+      +question: String
+      +answer: String
+    }
+  }
+
+  Profile "1" o-- "*" Photo
+  Profile "1" o-- "*" PromptAnswer
+  ProfileResponse "1" o-- "*" PromptQA
+}
+
+' USERS + ACCOUNT COMMANDS
+package "users" {
+  class User {
+    -id: UUID
+    -username: String
+    -passwordHash: String
+    -createdAt: Instant
+  }
+
+  interface UserRepository <<repository>> {
+    +findByUsername(username: String): Optional<User>
+    +existsByUsername(username: String): boolean
+  }
+
+  class AccountCommandService {
+    -executor: UserCommandExecutor
+    -deleteAccountCommand: DeleteAccountCommand
+
+    +deleteAccount(userId: UUID): void
+  }
+
+  class AccountController {
+    +deleteMyAccount(authHeader: String): void
+  }
+}
+
+package "commands" {
+  interface UserCommand {
+    +execute(userId: UUID): void
+  }
+
+  class DeleteAccountCommand implements UserCommand {
+    -profiles: ProfileRepository
+    -photos: PhotoRepository
+    -prompts: PromptAnswerRepository
+
+    +execute(userId: UUID): void
+  }
+
+  class UserCommandExecutor {
+    +execute(command: UserCommand, userId: UUID): void
+  }
+}
+
+' ---- RELATIONSHIPS ----
+ProfileController --> ProfileService
+ProfileService --> ProfileRepository
+ProfileService --> PhotoRepository
+ProfileService --> PromptAnswerRepository
+
+AccountController --> AccountCommandService
+AccountCommandService --> UserCommandExecutor
+AccountCommandService --> DeleteAccountCommand
+UserCommandExecutor --> DeleteAccountCommand
+
+DeleteAccountCommand --> ProfileRepository
+DeleteAccountCommand --> PhotoRepository
+DeleteAccountCommand --> PromptAnswerRepository
+
+@enduml

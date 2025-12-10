@@ -1,0 +1,120 @@
+@startuml
+skinparam activityStyle rectangle
+skinparam shadowing false
+
+title Merge Dating App – Activity (Final Part 3)
+
+start
+
+:'Open Merge' in browser;
+
+:See landing / login page;
+
+if (Has an account?) then (Yes)
+  :Enter email & password;
+  :Click "Log in";
+  if (Login successful?) then (Yes)
+    :User is logged in;
+  else (No)
+    :Show error message\n("Invalid email or password");
+    :Let user try again;
+    -->[back] Has an account?;
+  endif
+else (No)
+  :Click "Sign up";
+  :Enter email & password;
+  :Submit registration form;
+  :Show "Account created" message;
+  :User is logged in;
+endif
+
+' PROFILE
+:Redirect to Profile page;
+
+if (Profile complete?) then (Yes)
+  :Show profile summary;
+else (No)
+  :Fill basic info\n(name, city, birthday, etc.);
+  :Select gender, pronouns,\nrelationship intent;
+  :Add at least one photo;
+  :Answer profile prompts;
+  :Click "Save profile";
+  :Mark profile as complete\nand discoverable;
+endif
+
+if (User selects "Delete Account"?) then (Yes)
+  :Show confirmation dialog\n("This action cannot be undone");
+  if (User confirms?) then (Yes)
+    :Delete user account;
+    :Remove profile, matches,\nmessages, blocks, and tokens;
+    :Log user out;
+    stop
+  else (No)
+    :Return to Profile page;
+  endif
+endif
+
+' DISCOVERY
+:Navigate to Discover page;
+
+while (More candidates available?)
+  :Show next candidate card\n(photo, basics, prompts);
+
+  if (User decision) then (Pass)
+    :Press "Pass";
+    :Discard candidate\nand move to next;
+  else (Like)
+    :Press "Like";
+    if (Other person\nalso liked before?) then (Yes)
+      :Show "It's a match!" popup;
+      if (User chooses\n"Open chat") then (Yes)
+        break
+      else (Keep browsing)
+        :Close popup;
+      endif
+    else (No)
+      :Move to next candidate;
+    endif
+  endif
+endwhile
+
+if (No more candidates?) then (Yes)
+  :Show message\n("No more candidates right now. Check back soon!");
+  :User can return later\nor edit profile;
+  stop
+endif
+
+' CHAT
+:Go to Chat page;
+
+if (Any matches?) then (Yes)
+  :Show list of matches;
+  :User selects a conversation;
+  :Display chat history;
+
+  if (User selects "Block User"?) then (Yes)
+    :Show block confirmation;
+    if (User confirms block?) then (Yes)
+      :Block selected user;
+      :Remove match and chat thread;
+      :Exclude user from discovery\nand chat permanently;
+      :Return to Chat list;
+    else (No)
+      :Return to conversation;
+    endif
+  endif
+
+  while (User wants to chat)
+    :Type a message;
+    :Press "Send";
+    :Message appears in chat;
+  endwhile
+
+  :User may switch conversations,\nreturn to Discover,\nor open Profile;
+else (No)
+  :Show message\n("You don't have any matches yet");
+  :Suggest going back to Discover;
+endif
+
+stop
+@enduml
