@@ -1,7 +1,6 @@
-// src/api/account.js
 import api from "./client";
 
-// DELETE /api/account  (delete *my* account)
+// DELETE /api/account  (delete account)
 export function deleteMyAccount() {
     return api.delete("/api/account");
 }

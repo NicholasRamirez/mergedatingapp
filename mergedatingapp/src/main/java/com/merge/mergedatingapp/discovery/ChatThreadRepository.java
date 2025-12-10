@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+// Repository for accessing chat threads associated with matches.
 public interface ChatThreadRepository extends JpaRepository<ChatThread, UUID> {
+
     Optional<ChatThread> findByMatchId(UUID matchId);
 
     List<ChatThread> findAllByMatchId(UUID matchId);

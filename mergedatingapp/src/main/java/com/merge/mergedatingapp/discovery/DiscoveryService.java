@@ -32,41 +32,42 @@ public class DiscoveryService {
 
     @Transactional(readOnly = true)
     public CandidateCard next(UUID viewerUserId) {
+
         // Load all discoverable profiles that are NOT the viewer
         var discoverable = profiles.findAll().stream()
-                .filter(p -> p.isDiscoverable())
-                .filter(p -> !p.getUserId().equals(viewerUserId))
-                .filter(p -> !blockedRepo.existsByBlockerIdAndBlockedId(viewerUserId, p.getUserId())
-                        && !blockedRepo.existsByBlockerIdAndBlockedId(p.getUserId(), viewerUserId))
-                .filter(p -> !seenRepo.existsByViewerUserIdAndCandidateUserId(viewerUserId, p.getUserId()))
+                .filter(profile -> profile.isDiscoverable())
+                .filter(profile -> !profile.getUserId().equals(viewerUserId))
+                .filter(profile -> !blockedRepo.existsByBlockerIdAndBlockedId(viewerUserId, profile.getUserId())
+                        && !blockedRepo.existsByBlockerIdAndBlockedId(profile.getUserId(), viewerUserId))
+                .filter(profile -> !seenRepo.existsByViewerUserIdAndCandidateUserId(viewerUserId, profile.getUserId()))
                 .toList();
 
         // Delegate ordering to Strategy
         var ordered = candidateOrderingStrategy.orderCandidates(discoverable, viewerUserId);
 
         // Iterate in that order, skipping ones already seen
-        for (var p : ordered) {
-            boolean alreadySeen = seenRepo.existsByViewerUserIdAndCandidateUserId(viewerUserId, p.getUserId());
+        for (var profile : ordered) {
+            boolean alreadySeen = seenRepo.existsByViewerUserIdAndCandidateUserId(viewerUserId, profile.getUserId());
             if (alreadySeen) continue;
 
-            var photoUrls = photos.findByProfileIdOrderByPositionAsc(p.getId())
+            var photoUrls = photos.findByProfileIdOrderByPositionAsc(profile.getId())
                     .stream().map(Photo::getUrl).toList();
 
-            var qas = prompts.findByProfileId(p.getId()).stream()
+            var qas = prompts.findByProfileId(profile.getId()).stream()
                     .limit(2)
                     .map(pa -> new CandidateCard.PromptQA(pa.getQuestion(), pa.getAnswer()))
                     .toList();
 
             return new CandidateCard(
-                    p.getUserId(),
-                    p.getName(),
-                    p.getCity(),
+                    profile.getUserId(),
+                    profile.getName(),
+                    profile.getCity(),
                     photoUrls,
                     qas,
-                    p.getGender(),
-                    p.getPronouns(),
-                    p.getRelationshipIntent(),
-                    p.getHeightCm()
+                    profile.getGender(),
+                    profile.getPronouns(),
+                    profile.getRelationshipIntent(),
+                    profile.getHeightCm()
             );
         }
 
@@ -75,33 +76,35 @@ public class DiscoveryService {
 
     @Transactional
     public void pass(UUID viewer, UUID candidate) {
-        var sc = seenRepo.findByViewerUserIdAndCandidateUserId(viewer, candidate)
+
+        var seenCandidate = seenRepo.findByViewerUserIdAndCandidateUserId(viewer, candidate)
                 .orElse(SeenCandidate.builder()
                         .viewerUserId(viewer)
                         .candidateUserId(candidate)
                         .build());
-        sc.setDecision(SeenCandidate.Decision.PASS);
-        seenRepo.save(sc);
+        seenCandidate.setDecision(SeenCandidate.Decision.PASS);
+        seenRepo.save(seenCandidate);
     }
 
     @Transactional
     public LikeResponse like(UUID liker, UUID liked) {
-        // mark seen as LIKE
-        var sc = seenRepo.findByViewerUserIdAndCandidateUserId(liker, liked)
-                .orElse(SeenCandidate.builder().viewerUserId(liker).candidateUserId(liked).build());
-        sc.setDecision(SeenCandidate.Decision.LIKE);
-        seenRepo.save(sc);
 
-        // save like if not exists
+        // Mark seen as LIKE
+        var seenCandidate = seenRepo.findByViewerUserIdAndCandidateUserId(liker, liked)
+                .orElse(SeenCandidate.builder().viewerUserId(liker).candidateUserId(liked).build());
+        seenCandidate.setDecision(SeenCandidate.Decision.LIKE);
+        seenRepo.save(seenCandidate);
+
+        // Save like if not exists
         if (!likeRepo.existsByLikerIdAndLikedId(liker, liked)) {
             likeRepo.save(LikeEntity.builder().likerId(liker).likedId(liked).build());
         }
 
-        // mutual?
+        // Mutual like?
         boolean mutual = likeRepo.existsByLikerIdAndLikedId(liked, liker);
         if (!mutual) return LikeResponse.liked();
 
-        // create deterministic match (userA < userB)
+        // Create deterministic match (userA < userB)
         UUID a = liker.compareTo(liked) < 0 ? liker : liked;
         UUID b = liker.compareTo(liked) < 0 ? liked : liker;
 

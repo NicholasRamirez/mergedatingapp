@@ -8,8 +8,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-
-// Default strategy: show most recently updated profiles first.
+// Default candidate ordering strategy:
+// Order candidates by lastUpdated timestamp.
 
 @Component
 public class LastUpdatedCandidateOrderingStrategy implements CandidateOrderingStrategy {
@@ -17,6 +17,7 @@ public class LastUpdatedCandidateOrderingStrategy implements CandidateOrderingSt
     @Override
     public List<Profile> orderCandidates(List<Profile> candidates, UUID viewerUserId) {
         return candidates.stream()
+
                 // if lastUpdated is ever null, treat as very old
                 .sorted(Comparator.comparing(
                         p -> p.getLastUpdated() != null ? p.getLastUpdated() : Instant.EPOCH

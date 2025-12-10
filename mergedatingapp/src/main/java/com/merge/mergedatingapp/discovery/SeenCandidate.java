@@ -5,21 +5,31 @@ import lombok.*;
 import java.time.Instant;
 import java.util.UUID;
 
+// JPA entity recording that a viewer has seen given candidate.
+// Along with their decision (Pass / Like).
+
 @Entity @Table(name = "seen_candidates",
         uniqueConstraints = @UniqueConstraint(columnNames = {"viewerUserId","candidateUserId"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class SeenCandidate {
-    @Id @GeneratedValue private UUID id;
 
-    @Column(nullable = false) private UUID viewerUserId;
-    @Column(nullable = false) private UUID candidateUserId;
+    @Id @GeneratedValue
+    private UUID id;
+
+    @Column(nullable = false)
+    private UUID viewerUserId;
+
+    @Column(nullable = false)
+    private UUID candidateUserId;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING) @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Decision decision = Decision.NONE;
 
     @Builder.Default
-    @Column(nullable = false) private Instant seenAt = Instant.now();
+    @Column(nullable = false)
+    private Instant seenAt = Instant.now();
 
     public enum Decision { NONE, PASS, LIKE }
 }

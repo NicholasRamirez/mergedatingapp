@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
+// Concrete NotificationSender that logs match notifications.
+
 public class ConsoleNotificationSender implements NotificationSender {
 
     private static final Logger log =

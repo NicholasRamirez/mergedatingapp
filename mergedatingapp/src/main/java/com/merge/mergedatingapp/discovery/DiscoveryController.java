@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+// REST API for discovery and matching actions:
+// Fetching next candidate, Passing on a candidate, Liking a candidate
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")

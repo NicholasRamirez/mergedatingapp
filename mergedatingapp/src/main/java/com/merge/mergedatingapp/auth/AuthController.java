@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+// REST controller for authentication related endpoints:
+// register, login, get user from token, logout
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -24,7 +27,7 @@ public class AuthController {
         return auth.login(req);
     }
 
-    // For now, reads our "dev-<uuid>" token from Authorization header
+    // Resolve the current user from the Authorization Bearer token.
     @GetMapping("/user")
     public UserResponse user(@RequestHeader(name = "Authorization", required = false) String authHeader) {
         return auth.getUserFromToken(authHeader);

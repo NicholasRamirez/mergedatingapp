@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+// REST API for account actions:
+// Deleting current user's account, Blocking another user
+
 @RestController
 @RequestMapping("/api/account")
 @RequiredArgsConstructor

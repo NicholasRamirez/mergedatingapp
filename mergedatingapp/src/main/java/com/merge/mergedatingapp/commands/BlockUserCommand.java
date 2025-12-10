@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.UUID;
 
+// Command that holds the logic for blocking another user
+
 @Component
 @RequiredArgsConstructor
 public class BlockUserCommand {
@@ -17,6 +19,7 @@ public class BlockUserCommand {
 
     @Transactional
     public void execute(UUID blockerId, UUID blockedId) {
+
         // no self-block
         if (blockerId.equals(blockedId)) {
             return;

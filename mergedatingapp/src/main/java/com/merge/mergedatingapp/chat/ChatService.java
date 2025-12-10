@@ -5,7 +5,6 @@ import com.merge.mergedatingapp.chat.dto.MessageResponse;
 import com.merge.mergedatingapp.chat.dto.ThreadSummary;
 import com.merge.mergedatingapp.discovery.ChatThread;
 import com.merge.mergedatingapp.discovery.ChatThreadRepository;
-import com.merge.mergedatingapp.discovery.Match;
 import com.merge.mergedatingapp.discovery.MatchRepository;
 import com.merge.mergedatingapp.users.BlockedUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,15 +27,16 @@ public class ChatService {
     private final ProfileRepository profiles;
     private final BlockedUserRepository blockedRepo;
 
+    // List visible chat threads for user
     @Transactional(readOnly = true)
     public List<ThreadSummary> listThreads(UUID userId) {
-        var ms = matches.findByUserAOrUserB(userId, userId);
+        var matchesForUser = matches.findByUserAOrUserB(userId, userId);
 
-        return ms.stream()
-                .filter(m -> {
-                    UUID partner = m.getUserA().equals(userId)
-                            ? m.getUserB()
-                            : m.getUserA();
+        return matchesForUser.stream()
+                .filter(match -> {
+                    UUID partner = match.getUserA().equals(userId)
+                            ? match.getUserB()
+                            : match.getUserA();
 
                     boolean blockedEitherWay =
                             blockedRepo.existsByBlockerIdAndBlockedId(userId, partner) ||
@@ -44,24 +44,24 @@ public class ChatService {
 
                     return !blockedEitherWay;
                 })
-                .map(m -> {
-                    var t = threads.findByMatchId(m.getId()).orElseThrow(() ->
+                .map(match -> {
+                    var thread = threads.findByMatchId(match.getId()).orElseThrow(() ->
                             new ResponseStatusException(
                                     HttpStatus.INTERNAL_SERVER_ERROR,
                                     "Thread missing for match"
                             ));
 
-                    UUID partner = m.getUserA().equals(userId)
-                            ? m.getUserB()
-                            : m.getUserA();
+                    UUID partner = match.getUserA().equals(userId)
+                            ? match.getUserB()
+                            : match.getUserA();
 
                     // Look up the partner's profile to get their display name
                     var profileOpt = profiles.findByUserId(partner);
-                    String partnerName = profileOpt.map(p -> p.getName()).orElse(null);
+                    String partnerName = profileOpt.map(profile -> profile.getName()).orElse(null);
 
                     return new ThreadSummary(
-                            t.getId(),
-                            m.getId(),
+                            thread.getId(),
+                            match.getId(),
                             partner,
                             partnerName
                     );
@@ -69,32 +69,42 @@ public class ChatService {
                 .toList();
     }
 
+    // Return all messages in a thread.
     @Transactional(readOnly = true)
     public List<MessageResponse> getMessages(UUID userId, UUID threadId) {
-        var t = threads.findById(threadId).orElseThrow(() ->
+        var thread = threads.findById(threadId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Thread not found"));
-        ensureParticipant(userId, t);
+
+        ensureParticipant(userId, thread);
+
         return messages.findByThreadIdOrderBySentAtAsc(threadId).stream()
-                .map(m -> new MessageResponse(m.getId(), m.getThreadId(), m.getSenderId(), m.getSentAt(), m.getContent()))
+                .map(message -> new MessageResponse(message.getId(), message.getThreadId(), message.getSenderId(),
+                        message.getSentAt(), message.getContent()))
                 .toList();
     }
 
     @Transactional
     public MessageResponse send(UUID userId, UUID threadId, MessageRequest req) {
-        var t = threads.findById(threadId).orElseThrow(() ->
+        var thread = threads.findById(threadId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Thread not found"));
-        ensureParticipant(userId, t);
+
+        ensureParticipant(userId, thread);
+
         var saved = messages.save(ChatMessage.builder()
                 .threadId(threadId)
                 .senderId(userId)
                 .content(req.content())
                 .build());
-        return new MessageResponse(saved.getId(), saved.getThreadId(), saved.getSenderId(), saved.getSentAt(), saved.getContent());
+
+        return new MessageResponse(saved.getId(), saved.getThreadId(),
+                saved.getSenderId(), saved.getSentAt(), saved.getContent());
     }
 
+    // Makes sure user is one of participants in the match for chat thread.
     private void ensureParticipant(UUID userId, ChatThread t) {
         var match = matches.findById(t.getMatchId()).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Match missing for thread"));
+
         if (!(match.getUserA().equals(userId) || match.getUserB().equals(userId))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not a participant");
         }

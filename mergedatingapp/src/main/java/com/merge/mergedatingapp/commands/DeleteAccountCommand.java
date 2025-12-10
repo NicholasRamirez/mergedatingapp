@@ -12,6 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+// Command that deletes a user's account, Deleting:
+// Profile, prompts, photos
+// Discovery / like / match / chat data
+// Block relationships
+// Auth tokens
+
 @Component
 @RequiredArgsConstructor
 public class DeleteAccountCommand implements UserCommand {

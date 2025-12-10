@@ -4,9 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
 
+// Q&A prompt attached to profile
+
 @Entity @Table(name = "prompt_answers")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class PromptAnswer {
+
     @Id @GeneratedValue
     private UUID id;
 

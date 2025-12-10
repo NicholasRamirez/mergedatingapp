@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+// REST API for viewing and editing user's profile, including photos and prompts
+
 @RestController
 @RequestMapping("/api/profile")
 @RequiredArgsConstructor
@@ -18,6 +20,7 @@ public class ProfileController {
     private final ProfileService svc;
     private final AuthService auth; // to parse the dev token and get userId
 
+    // Extracts userId from authorization header (Bearer token).
     private UUID userIdFromAuth(String header) {
         UserResponse user = auth.getUserFromToken(header);
         return user.userId();

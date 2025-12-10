@@ -5,18 +5,27 @@ import lombok.*;
 import java.time.Instant;
 import java.util.UUID;
 
+// JPA entity represetning a mutual match between two users.
+
 @Entity @Table(name = "matches",
         uniqueConstraints = @UniqueConstraint(columnNames = {"userA","userB"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Match {
-    @Id @GeneratedValue private UUID id;
 
-    @Column(nullable = false) private UUID userA; // smaller-uuid first
-    @Column(nullable = false) private UUID userB;
+    @Id @GeneratedValue
+    private UUID id;
+
+    @Column(nullable = false)
+    private UUID userA; // smaller-uuid first
+
+    @Column(nullable = false)
+    private UUID userB;
 
     @Builder.Default
-    @Column(nullable = false) private Instant createdAt = Instant.now();
+    @Column(nullable = false)
+    private Instant createdAt = Instant.now();
 
     @Builder.Default
-    @Column(nullable = false) private boolean active = true;
+    @Column(nullable = false)
+    private boolean active = true;
 }

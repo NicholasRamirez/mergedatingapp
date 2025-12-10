@@ -3,6 +3,7 @@ package com.merge.mergedatingapp.discovery.dto;
 import java.util.UUID;
 
 public record LikeResponse(String status, UUID matchId, UUID threadId) {
+
     public static LikeResponse liked() {
         return new LikeResponse("LIKED", null, null);
     }

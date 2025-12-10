@@ -2,17 +2,17 @@ package com.merge.mergedatingapp.notifications;
 
 import java.util.UUID;
 
-// Creator in the Factory Method pattern.
+// Creator in the factory.
 // Subclasses decide which NotificationSender to instantiate.
 
 public abstract class NotificationFactory {
 
-
-    //Factory method: choose a sender implementation for this user.
+    // Choose a sender implementation for user.
     public abstract NotificationSender createSenderForUser(UUID userId);
 
-    // Convenience helper: notify both sides of a new match.
+    // Notify both sides of a new match.
     public void notifyMatch(UUID userA, UUID userB, UUID matchId, UUID threadId) {
+
         var senderA = createSenderForUser(userA);
         senderA.sendMatchNotification(userA, userB, matchId, threadId);
 

@@ -4,9 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
 
+// Photo entity for user's profile
+
 @Entity @Table(name = "photos")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Photo {
+
     @Id @GeneratedValue
     private UUID id;
 

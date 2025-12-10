@@ -4,15 +4,14 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-//ConcreteCreator: current default strategy is "log to console".
-// Later this can look at user preferences.
+// ConcreteCreator in the factory.
+// Current: returns ConsoleNotificationSender. Meant to further allow different notification preferences.
 
 @Component
 public class DefaultNotificationFactory extends NotificationFactory {
 
     @Override
     public NotificationSender createSenderForUser(UUID userId) {
-        // TODO later: read notification preferences for this user
         return new ConsoleNotificationSender();
     }
 }

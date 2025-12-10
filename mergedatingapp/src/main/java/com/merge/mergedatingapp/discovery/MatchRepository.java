@@ -5,7 +5,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.List;
 
+// Repository for Match entities:
+// Looking up existing matches, finding all matches for user, deleting matches.
+
 public interface MatchRepository extends JpaRepository<Match, UUID> {
+
     Optional<Match> findByUserAAndUserB(UUID a, UUID b);
 
     List<Match> findByUserAOrUserB(UUID userA, UUID userB);

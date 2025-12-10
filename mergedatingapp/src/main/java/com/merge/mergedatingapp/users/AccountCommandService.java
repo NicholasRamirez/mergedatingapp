@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+// Carries out account-related operations with command objects.
+// Delegates to DeleteAccountCommand and BlockUserCommand with UserCommandExecutor.
+
 @Service
 @RequiredArgsConstructor
 public class AccountCommandService {

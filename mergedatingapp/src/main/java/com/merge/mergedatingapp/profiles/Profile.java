@@ -8,9 +8,12 @@ import java.util.UUID;
 
 import static com.merge.mergedatingapp.profiles.Enums.*;
 
+// Profile entity
+
 @Entity @Table(name = "profiles")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Profile {
+
     @Id @GeneratedValue
     private UUID id;
 

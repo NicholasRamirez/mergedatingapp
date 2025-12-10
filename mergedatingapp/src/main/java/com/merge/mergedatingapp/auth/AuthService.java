@@ -14,6 +14,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+// Core Authentication Service:
+// user registration, login (token issuance), token-based user lookup, logout (token revocation)
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -26,15 +29,17 @@ public class AuthService {
         if (users.existsByUsername(req.username())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already registered");
         }
+
         var user = User.builder()
                 .username(req.username())
                 .passwordHash(passwordEncoder.encode(req.password()))
                 .createdAt(Instant.now())
                 .build();
+
         users.save(user);
     }
 
-    // REAL token: row in DB, UUID returned to client
+    // Authenticate credentials and issue a 7-day token.
     public TokenResponse login(LoginRequest req) {
         var user = users.findByUsername(req.username())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
@@ -91,8 +96,8 @@ public class AuthService {
         }
 
         String raw = authHeader.substring("Bearer ".length()).trim();
-        UUID tokenId;
 
+        UUID tokenId;
         try {
             tokenId = UUID.fromString(raw);
         } catch (IllegalArgumentException e) {throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,

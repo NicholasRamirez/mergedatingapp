@@ -5,15 +5,23 @@ import lombok.*;
 import java.time.Instant;
 import java.util.UUID;
 
+// JPA entity representing a like from one user to another.
+
 @Entity @Table(name = "likes",
         uniqueConstraints = @UniqueConstraint(columnNames = {"likerId","likedId"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class LikeEntity {
-    @Id @GeneratedValue private UUID id;
 
-    @Column(nullable = false) private UUID likerId;
-    @Column(nullable = false) private UUID likedId;
+    @Id @GeneratedValue
+    private UUID id;
+
+    @Column(nullable = false)
+    private UUID likerId;
+
+    @Column(nullable = false)
+    private UUID likedId;
 
     @Builder.Default
-    @Column(nullable = false) private Instant createdAt = Instant.now();
+    @Column(nullable = false)
+    private Instant createdAt = Instant.now();
 }

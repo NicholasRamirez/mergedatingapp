@@ -6,6 +6,9 @@ import lombok.*;
 import java.time.Instant;
 import java.util.UUID;
 
+// Blocking between two users.
+// User A has blocked user B
+
 @Entity
 @Table(
         name = "blocked_users",

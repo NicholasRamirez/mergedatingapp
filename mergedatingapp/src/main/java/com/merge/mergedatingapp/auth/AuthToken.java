@@ -6,6 +6,9 @@ import lombok.*;
 import java.time.Instant;
 import java.util.UUID;
 
+// Authentication token for a user session.
+// The UUID primary key is the token value exposed to clients.
+
 @Entity
 @Table(name = "auth_tokens")
 @Getter
