@@ -17,7 +17,8 @@ public class CorsConfig {
 
         // Local dev URL
         cfg.setAllowedOrigins(List.of(
-                "http://localhost:5173"
+                "http://localhost:5173",
+                "https://merge-dating-app.vercel.app"
         ));
 
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
