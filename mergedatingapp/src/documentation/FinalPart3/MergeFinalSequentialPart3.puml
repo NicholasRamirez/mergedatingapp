@@ -11,7 +11,7 @@ FE -> BE: Request initial page
 BE --> FE: HTML / CSS / JS
 
 User -> FE: Click "Log in" or "Sign up"
-User -> FE: Enter email & password
+User -> FE: Enter username & password
 FE -> BE: Submit credentials
 BE --> FE: Success + auth token
 FE --> User: Show logged-in state

@@ -11,20 +11,18 @@ start
 :See landing / login page;
 
 if (Has an account?) then (Yes)
-  :Enter email & password;
+  :Enter username & password;
   :Click "Log in";
   if (Login successful?) then (Yes)
     :User is logged in;
   else (No)
-    :Show error message\n("Invalid email or password");
     :Let user try again;
     -->[back] Has an account?;
   endif
 else (No)
   :Click "Sign up";
-  :Enter email & password;
+  :Enter username & password;
   :Submit registration form;
-  :Show "Account created" message;
   :User is logged in;
 endif
 
@@ -38,7 +36,7 @@ else (No)
   :Select gender, pronouns,\nrelationship intent;
   :Add at least one photo;
   :Answer profile prompts;
-  :Click "Save profile";
+  :Click "Save";
   :Mark profile as complete\nand discoverable;
 endif
 
